@@ -344,11 +344,17 @@ function updateDomain(startJD,endJD,minMag,maxMag,DeltaJD)
 
     if(ErrorBarActive&&DateFormat=="Julian")
     {      ErrorBarG.style("display", "block")
-            ErrorBars.attr("transform", function (d)
-                {
-                    return "translate("+XscaleJulian(d.JD)+" "+YL(d.mag)+")"
-                }
-            )
+//            ErrorBars.attr("transform", function (d)
+//                {
+//                    return "translate("+XscaleJulian(d.JD)+" "+YL(d.mag)+")"
+//                }
+//            )
+        var scaleY = 1/(YL.domain()[0] - YL.domain()[1])
+        ErrorBars.attr("transform", function (d)
+            {
+                return "scale(1, "+scaleY+") translate("+XscaleJulian(d.JD)+" "+YL(d.mag)/scaleY+")"
+            }
+        )
     }
     else if(ErrorBarActive&&DateFormat=="Calendar")
     {

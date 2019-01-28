@@ -316,9 +316,15 @@ function boxReset()
     if(ErrorBarActive)
     {
          ErrorBarG.style("display", "block")
+//            ErrorBars.attr("transform", function (d)
+//                {
+//                    return "translate("+XscaleJulian(d.JD)+" "+YL(d.mag)+")"
+//                }
+//            )
+        var scaleY = YL.domain()[0] - YL.domain()[1]
         ErrorBars.attr("transform", function (d)
             {
-                return "translate("+XscaleJulian(d.JD)+" "+YL(d.mag)+")"
+                return "scale(1, "+scaleY+") translate("+XscaleJulian(d.JD)+" "+YL(d.mag)/scaleY+")"
             }
         )
     }

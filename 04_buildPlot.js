@@ -384,21 +384,21 @@ else
             .attr("clip-path", "url(#clip)")
 
             SymbolG = PointsG.append("g")
-            .attr("id", "symbolPlotG")
-            .attr("stroke", "black")
+    .attr("id", "symbolPlotG")
+    .attr("stroke", "black")
 
-            Points = SymbolG.selectAll(".Points")
-            .data(Data)
-            .enter().append("g")
-            .attr("id", function (d)
-                {
-                    return "point"+d.index
-                }
-            )
-            .attr("dataLoc", function (d, i)
-                {
-                    return i
-                }
+    Points = SymbolG.selectAll(".Points")
+    .data(Data)
+    .enter().append("g")
+    .attr("id", function (d)
+        {
+            return "point"+d.index
+        }
+    )
+    .attr("dataLoc", function (d, i)
+        {
+            return i
+        }
             )
             .attr("class", function (d)
                 {

@@ -3,6 +3,7 @@ var ErrorBarG
 var ErrorBars
 var ErrorBarInit = false
 var ErrorBarActive = false
+
 function errorBarCheckClicked()
 {
     /*---Preferences: Build/Show error bars---
@@ -103,6 +104,7 @@ function errorBarSelected()
 }
 
 var UncertGT = 0
+var MagnitudeRange
 function buildErrorBars()
 {
     /*---Create the Error Bars---
@@ -111,8 +113,10 @@ function buildErrorBars()
     */
 
     var height = PlotHeight-30
+
     var max = getMaxMag(Data)
     var min = getMinMag(Data)
+
     var magXFactor = height/(max-min)
 
     ErrorBars = ErrorBarG.selectAll(".errorBar")
@@ -128,27 +132,34 @@ function buildErrorBars()
             return "errorBar"+i
         }
     )
-    .attr("class", "errorBar)")
+    .attr("class", "errorBar")
     .attr("stroke-width", function(d)
         {
             if(d.uncert<.05) return .4; else return .8
         }
     )
     .attr("pointer-events", "none)")
-    .attr("marker-start", "url(#startArrow)")
-    .attr("marker-end", "url(#endArrow)")
+//    .attr("marker-start", "url(#startArrow)")
+//    .attr("marker-end", "url(#endArrow)")
+    .attr("marker-start", "url(#endArrow)")
+    .attr("marker-end", "url(#startArrow)")
+
     .attr("x1", 0)
+    .attr("x2", 0)
+
     .attr("y1", function(d)
         {
-            return -d.uncert*magXFactor
+//        return -d.uncert*magXFactor
+            return -d.uncert
         }
     )
-    .attr("x2", 0)
     .attr("y2", function(d)
         {
-            return d.uncert*magXFactor
+//        return +d.uncert*magXFactor
+            return +d.uncert
         }
     )
+
 
     //---show only symbols with error bar---
     for(var k = 0; k<ErrorBarData.length; k++)
@@ -171,9 +182,15 @@ function buildErrorBars()
         }
 
     }
-    ErrorBars.attr("transform", function (d)
+//    ErrorBars.attr("transform", function(d)
+//        {
+//            return "translate("+XscaleJulian(d.JD)+" "+YL(d.mag)+")"
+//        }
+//    )
+    var scaleY = YL.domain()[0] - YL.domain()[1]
+    ErrorBars.attr("transform", function(d)
         {
-            return "translate("+XscaleJulian(d.JD)+" "+YL(d.mag)+")"
+            return "scale(1, "+scaleY+")"+"translate("+XscaleJulian(d.JD)+" "+YL(d.mag)/scaleY+")"
         }
     )
 

@@ -150,12 +150,19 @@ function resetMagRangeButtonClicked()
                     return "translate("+ XscaleJulian(d.JD)+","+YL(d.mag)+")scale("+SymbolScaleRatio+")"
                 }
             )
-            if(ErrorBarActive)
-            ErrorBars.attr("transform", function (d)
-                {
-                    return "translate("+XscaleJulian(d.JD)+" "+YL(d.mag)+")"
-                }
-            )
+            if(ErrorBarActive) {
+//                ErrorBars.attr("transform", function (d)
+//                    {
+//                        return "translate("+XscaleJulian(d.JD)+" "+YL(d.mag)+")"
+//                    }
+//                )
+               var scaleY = YL.domain()[0] - YL.domain()[1]
+                ErrorBars.attr("transform", function(d)
+                    {
+                        return "scale(1, "+scaleY+")"+"translate("+XscaleJulian(d.JD)+" "+YL(d.mag)/scaleY+")"
+                    }
+                )
+            }
 
           if(DataPacketVis==true)
               setTimeout(slideDataPacketRect,1000)
