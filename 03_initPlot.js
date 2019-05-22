@@ -89,7 +89,8 @@ function initPlot()
     .attr("stroke-width", "30")
 
     //----Spectra gradient for spectra symbols --
-      var defs = PlotSVG.append("defs")
+//      var defs = PlotSVG.append("defs")
+
     var spectralGrad = defs.append("radialGradient")
     .attr("id", "spectra")
     .attr("cx", "50%")
@@ -143,5 +144,4 @@ function initPlot()
         initMeanBinSlider()
         contribSelectDiv.style.display = "block"
     }
-
 }

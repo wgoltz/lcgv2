@@ -17,6 +17,18 @@ function createSymbolClones()
     }
 }
 
+function fillColorFromBandName(band, pgon)
+{
+    for(var k=0;k<BandNameArray.length;k++)
+    {
+        var bandName = BandNameArray[k]
+        if(band == bandName[1])
+        {
+            pgon.setAttribute("fill", bandName[2])
+            break
+        }
+    }
+}
 
 function addSymbolPolygons()
 {
@@ -32,36 +44,27 @@ function addSymbolPolygons()
     {
         var symbolG = symbolGs[k]
         var bandName = symbolG.getAttribute("band")
-         var faintParent=bandName
 
+        var faint = (symbolG.getAttribute("faint")=="1")
 
-        var faint = symbolG.getAttribute("faint")
-       if(faint=="1")
-       bandName="Faint"
+        var myG = (faint) ? symbolSVG.getElementById("band_Faint") : symbolSVG.getElementById("band_" + bandName)
 
+        symbolG.setAttribute("fill", myG.getAttribute("fill"))
 
+        var polygon = myG.firstChild
 
-            var myG = symbolSVG.getElementById("band_"+bandName)
+        var clonedPolygon = polygon.cloneNode("true")
+        if(faint)
+        {
+            symbolG.setAttribute("faintParent", bandName)
+            fillColorFromBandName(bandName, clonedPolygon)
+        }
 
-            var fillBot = myG.getAttribute("fill") //--first pgon--
-            symbolG.setAttribute("fill", fillBot)
+        clonedPolygon.setAttribute("onmouseover", "showPointData(evt)")
+        clonedPolygon.setAttribute("onclick", "dataPacketSelected(evt)")
+        symbolG.appendChild(clonedPolygon)
 
-            var botPgon = myG.firstChild
-
-                var cloneBot = botPgon.cloneNode("true")
-              if(faint=="1") //---faint color---
-                 {
-                   symbolG.setAttribute("faintParent",faintParent)
-                   setFaintColor(faintParent,cloneBot)//---19_dataSelect.js---
-                 }
-
-                cloneBot.setAttribute("onmouseover", "showPointData(evt)")
-                cloneBot.setAttribute("onclick", "dataPacketSelected(evt)")
-                symbolG.appendChild(cloneBot)
-
-
-
-         if(myG.childNodes.length==2)
+        if(myG.childNodes.length==2)
         {
             var cloneTop = myG.lastChild.cloneNode("true")
             cloneTop.setAttribute("onmouseover", "showPointData(evt)")

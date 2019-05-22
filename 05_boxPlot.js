@@ -1,12 +1,11 @@
-
 var DrawX
 var BoxRect
 var SVGx
 var SVGy
 var BoxG
+
 function initBox()
 {
-
     BoxG=PlotSVG.append("g")
 
     DrawX = BoxG.append("g")
@@ -64,11 +63,14 @@ function initBox()
     })
     .on("click", startBoxRect)
 
-   initBoxSlide()
+    initBoxSlide()
 }
+
 var BoxOn = false
 var BoxActive = false //--not reset,slice existing box rect---
-var SlideRectPrevWidth
+var BoxRectSet = false
+var BoxRectStart = false
+
 function boxButtonClicked()
 {
     /*---opens the Box (or toggles it closed)---
@@ -76,112 +78,122 @@ function boxButtonClicked()
             boxButton @ index.htm
     */
     resetMean()
-    meanCurveButton.disabled = true
-    SpectraG.style("display", "none")
 
-    if(BoxOn==false)
+    if(BoxOn) // box is on: turn box off
     {
-        DrawX.style("display", "none")
+        DragDot.attr("transform", null)
         DragDot.style("display", "none")
-
-        BoxRect.style("display", "block")
-        boxButton.style.borderStyle = "inset"
-        BoxRectSet = false
-        BoxRectStart = false
-        BoxOn = true
-    }
-    else
-    {
-        BoxOn = false
-        BoxRectSet = false
-        BoxAreaSet = false
         BoxRect.attr("width", 0)
         BoxRect.attr("height", 0)
         BoxRect.attr("transform", null)
-        DragDot.attr("transform", null)
         BoxRect.style("display", "none")
-        DrawX.style("display", "none")
-        DragDot.style("display", "none")
-
         boxButton.style.borderStyle = "outset"
+
+        SlideCoverRect.style("display", "none")
+
         PlotSVG.attr("onmousedown", null)
         .attr("onmousemove", null)
         .attr("onmouseup", null)
+
         pointSVG.removeAttribute("onmousedown")
         pointSVG.removeAttribute("onmousemove")
         pointSVG.removeAttribute("onmouseup")
-        SlideCoverRect.style("display", "none")
-        meanCurveButton.disabled = false
+
+        BoxAreaSet = false
+    }
+    else // box is off: turn box on
+    {
+        DragDot.style("display", "none")
+        BoxRect.style("display", "block")
+        boxButton.style.borderStyle = "inset"      
+
+        BoxRectStart = false
     }
 
+    DrawX.style("display", "none")
+    SpectraG.style("display", "none")
+
+    BoxOn = !BoxOn
+    BoxRectSet = false
+//    meanCurveButton.disabled = BoxOn
 }
+
 //---button:on click--
+
 function startBoxRect()
 {
-    if(BoxOn==true&&BoxRectStart==false) //---first click
+    if(BoxOn==true && BoxRectStart==false) //---first click
     {
-        if(BoxActive==true)
-            SlideRectPrevWidth = parseFloat(SlideRect.attr("width"))
-
-        BoxRect.attr("transform", "translate("+SVGx+" "+SVGy+")")
         BoxRect.attr("width", 60)
         BoxRect.attr("height", 60)
-        BoxRectStart = true
-        DragDot.style("display", "block")
         BoxRect.style("display", "block")
-        var transX = SVGx
-        var transY = SVGy
+        BoxRect.attr("transform", "translate("+SVGx+" "+SVGy+")")
+
         DragDot.attr("cx", 60)
         DragDot.attr("cy", 60)
+        DragDot.style("display", "block")
+        DragDot.attr("transform", "translate("+SVGx+" "+SVGy+")")
 
-        DragDot.attr("transform", "translate("+transX+" "+transY+")")
         BoxRectSet = true
-
+        BoxRectStart = true
     }
-
 }
+
 function boxBackButtonClicked()
 {
-  BoxAreaBackArray.pop()
+    BoxAreaBackArray.pop()
     if(BoxAreaBackArray.length>0)
     {
-        var boxStartJD=BoxAreaBackArray[BoxAreaBackArray.length-1][0]
-        var boxEndJD=BoxAreaBackArray[BoxAreaBackArray.length-1][1]
-        var boxStartMag=BoxAreaBackArray[BoxAreaBackArray.length-1][2]
-        var boxEndMag=BoxAreaBackArray[BoxAreaBackArray.length-1][3]
-        //---set for next active box---
-        ActiveMag0=boxStartMag
-        ActiveMag1=boxEndMag
-        ActiveJD0=boxStartJD
-        ActiveJD1=boxEndJD
-        //---used in box toggle slide---
-        SlideJD0 = boxStartJD
-        SlideJD1 = boxEndJD
-        BoxMinMag= boxStartMag
-        BoxMaxMag= boxEndMag
-        //---BoxAreaBackArray.push[slideWidth,transX,SlideJD0,SlideJD1,JDspanPrev,BoxMinMag,BoxMaxMag,ZoomCenterJD,PlotJDStart,PlotJDEnd]
-        var slideWidth=BoxAreaBackArray[BoxAreaBackArray.length-1][4]
-        var transX=BoxAreaBackArray[BoxAreaBackArray.length-1][5]
-        SlideJD0=BoxAreaBackArray[BoxAreaBackArray.length-1][6]
-        SlideJD1=BoxAreaBackArray[BoxAreaBackArray.length-1][7]
-        JDspanPrev=BoxAreaBackArray[BoxAreaBackArray.length-1][8]
-        BoxMinMag=BoxAreaBackArray[BoxAreaBackArray.length-1][9]
-        BoxMaxMag=BoxAreaBackArray[BoxAreaBackArray.length-1][10]
-        ZoomCenterJD=BoxAreaBackArray[BoxAreaBackArray.length-1][11]
-        PlotJDStart=BoxAreaBackArray[BoxAreaBackArray.length-1][12]
-        PlotJDEnd=BoxAreaBackArray[BoxAreaBackArray.length-1][13]
+//---BoxAreaBackArray.push[SlideJD0,SlideJD1,BoxMinMag,BoxMaxMag,spanJD,slideWidth,transX]
+        SlideJD0=BoxAreaBackArray[BoxAreaBackArray.length-1][0]
+        SlideJD1=BoxAreaBackArray[BoxAreaBackArray.length-1][1]
+        BoxMinMag=BoxAreaBackArray[BoxAreaBackArray.length-1][2]
+        BoxMaxMag=BoxAreaBackArray[BoxAreaBackArray.length-1][3]
 
-        updateDomain(boxStartJD,boxEndJD,boxStartMag,boxEndMag,0)
+        var spanJD=BoxAreaBackArray[BoxAreaBackArray.length-1][4]
+        var slideWidth=BoxAreaBackArray[BoxAreaBackArray.length-1][5]
+        var transX=BoxAreaBackArray[BoxAreaBackArray.length-1][6]
 
-        SlideRect.attr("transform", "translate("+ transX+" 0)")
+        SlideRect.attr("transform", "translate("+transX+" 0)")
         SlideRect.attr("width", slideWidth)
 
+
     }
-   else
+    else
         boxReset()
 
-
+        updateDomain()
 }
+
+//---needed for APASS data---
+function getMaxJD(data)
+{
+    var maxJD;
+    var index;
+    for (var i=0 ; i<data.length ; i++) {
+        if (!maxJD || data[i].JD > maxJD)
+        {
+            maxJD= data[i].JD;
+            index=i
+        }
+    }
+    return [maxJD,index]
+}
+function getMinJD(data)
+{
+    var minJD;
+    var index;
+    for (var i=0 ; i<data.length ; i++) {
+        if (!minJD || data[i].JD < minJD)
+        {
+            minJD= data[i].JD;
+
+            index=i
+        }
+    }
+    return [minJD,index]
+}
+
 function boxReset()
 {
     /*---Remove Box, return plot to original view---
@@ -193,158 +205,81 @@ function boxReset()
     meanCurveButton.disabled = false
     boxResetButton.disabled = true
     hidePointData()
+
     if(RequestedDateSet==false)
     {
-    //---needed for APASS data---
-           function getMaxJD(Data) {
-            var maxJD;
-            var index;
-            for (var i=0 ; i<Data.length ; i++) {
-                if (!maxJD || Data[i].JD > maxJD)
-                {
-                    maxJD= Data[i].JD;
-                    index=i
-                 }
-            }
-            return [maxJD,index]
-        }
-        function getMinJD(Data) {
-            var minJD;
-            var index;
-            for (var i=0 ; i<Data.length ; i++) {
-                if (!minJD || Data[i].JD < minJD)
-                {
-                    minJD= Data[i].JD;
+        var minDateIndex=getMinJD(Data)[1]
+        var maxDateIndex=getMaxJD(Data)[1]
 
-                    index=i
-                 }
-            }
-            return [minJD,index]
-        }
+        var minDate = Data[minDateIndex].time
+        var maxDate = Data[maxDateIndex].time
 
-    var minDateIndex=getMinJD(Data)[1]
+        var minMag = parseFloat(magRangeMinValue.value)
+        var maxMag = parseFloat(magRangeMaxValue.value)
 
-    var maxDateIndex=getMaxJD(Data)[1]
-    var minDate = Data[minDateIndex].time;
-    var maxDate = Data[maxDateIndex].time;
+        YL.domain([maxMag, minMag])
+        YR.domain([maxMag, minMag])
 
-    var minMag = parseFloat(magRangeMinValue.value)
-    var maxMag = parseFloat(magRangeMaxValue.value)
-    YL.domain([maxMag, minMag]);
-    YR.domain([maxMag, minMag])
-    YaxisLeft = d3.svg.axis().scale(YL)
-    .orient("right")
-
-    PlotSVG.select(".y.axis.left")
-    .call(YaxisLeft)
-    .selectAll("text")
-    .attr("class", "y-axis-font")
-    .attr("dx", "-4em")
-    .attr("stroke", "none")
-    .attr("fill", "black")
-    .attr("font-size", "15px")
-
-    PlotSVG.select(".y.axis.right")
-    .call(YaxisRight)
-    //---change grid---
-    GridYG.call(make_y_axis()
-        .tickSize(-XaxisWidth, 0, 0)
-        .tickFormat("")
-    )
-    XscaleJulian.domain(d3.extent
-        (Data, function(d)
-            {
-                return d.JD;
-            }
-        )
-    )
-
-      if(DateFormat=="Calendar")
-        XscaleTop.domain([minDate, maxDate]);
+        SlideJD0 = PlotJDStart
+        SlideJD1 = PlotJDEnd
+//        XscaleJulian.domain(extentJD)
+    }
     else
-        XscaleTop.domain(d3.extent
-            (Data, function(d)
-                {
-                    return d.JD;
-                }
-            )
-        );
-
-   }
-
-    XscaleCalendar.domain([minDate, maxDate])
-    XaxisJulian.scale(XscaleJulian)
-
-    XaxisJulian.tickFormat(d3.format("f"))
-    if(DateFormat=="Calendar")
     {
-        if(Data.length>5000)
-            Points = SymbolG.selectAll(".Points")
-            .data(Data)
-            .attr("transform", function (d){return "translate("+XscaleCalendar(d.time)+" "+YL(d.mag)+")scale("+SymbolScaleRatio+")"})
-        else
-            Points = SymbolG.selectAll(".Points")
-            .data(Data).transition().duration(1000)
-            .attr("transform", function (d){return "translate("+XscaleCalendar(d.time)+" "+YL(d.mag)+")scale("+SymbolScaleRatio+")"})
+// set minDate, maxDate, XscaleJulian
     }
-    else if(DateFormat=="Julian")
-    {
-        if(Data.length>5000)
-            Points = SymbolG.selectAll(".Points")
-            .data(Data)
-            .attr("transform", function (d){return "translate("+XscaleJulian(d.JD)+" "+YL(d.mag)+")scale("+SymbolScaleRatio+")"})
-        else
-            Points = SymbolG.selectAll(".Points")
-            .data(Data).transition().duration(1000)
-            .attr("transform", function (d){return "translate("+XscaleJulian(d.JD)+" "+YL(d.mag)+")scale("+SymbolScaleRatio+")"})
-    }
+
+//    XscaleCalendar.domain([minDate, maxDate])
+//    XaxisJulian.scale(XscaleJulian)
 
     BoxAreaSet = false
     BoxActive = false
-    if(DateFormat=="Calendar")
-            calendarDateRadioClicked()
-        else
-            julianDateRadioClicked()
 
-    slideLeftButton.setAttribute("opacity", 0)
-    slideRightButton.setAttribute("opacity", 0)
+    if(DateFormat=="Calendar")
+        calendarDateRadioClicked()
+    else
+        julianDateRadioClicked()
+
+    scaleAxes(scaleAxesType.Both)
+    scalePoints(SlideJD0, SlideJD1)
+
     horizLine.style.display = "none"
 
+    slideLeftButton.setAttribute("opacity", 0)
     slideLeftButton.setAttribute("pointer-events", "none")
+
+    slideRightButton.setAttribute("opacity", 0)
     slideRightButton.setAttribute("pointer-events", "none")
 
-    if(ErrorBarActive)
-    {
-         ErrorBarG.style("display", "block")
-//            ErrorBars.attr("transform", function (d)
-//                {
-//                    return "translate("+XscaleJulian(d.JD)+" "+YL(d.mag)+")"
-//                }
-//            )
-        var scaleY = YL.domain()[0] - YL.domain()[1]
-        ErrorBars.attr("transform", function (d)
-            {
-                return "scale(1, "+scaleY+") translate("+XscaleJulian(d.JD)+" "+YL(d.mag)/scaleY+")"
-            }
-        )
-    }
-    errorBarCheck.disabled=false
     if(DataPacketVis==true)
         setTimeout(slideDataPacketRect,1200)
+
     SlideCoverRect.style("display", "none")
     SlideRect.attr("width", "0")
-
 }
 
-
-var BoxRectStart = false
-var BoxRectSet = false
 var RectObj
-var ActiveMag0
-var ActiveMag1
-var ActiveJD0
-var ActiveJD1
 
+function getRealBoundsFromRectBounds()
+{
+    var yToMag = (BoxMaxMag-BoxMinMag)/(PlotHeight-30)
+    var xToJD = (SlideJD1-SlideJD0)/XaxisWidth
+
+    var boxX0 = RectObj.x-PlotOffsetX
+    var boxY0 = RectObj.y-PlotOffsetY
+    var boxX1 = boxX0+RectObj.width
+    var boxY1 = boxY0+RectObj.height
+
+    var lastJD = SlideJD0
+    SlideJD0 = lastJD + boxX0*xToJD
+    SlideJD1 = lastJD + boxX1*xToJD
+
+    var lastMinMag = BoxMinMag
+    BoxMinMag = lastMinMag + boxY0*yToMag
+    BoxMaxMag = lastMinMag + boxY1*yToMag
+}
+
+var JDspanPrev //---used to set slide rect size in active box---
 function trackBoxRect()
 {
     if(BoxRectStart==true)
@@ -352,206 +287,168 @@ function trackBoxRect()
         DragDot.style("display", "block")
         BoxRect.style("display", "block")
     }
-    if(BoxOn==true&&BoxRectSet==false)
+    if(BoxOn==true && BoxRectSet==false)
     {
         DrawX.style("display", "block")
+        .attr("transform", "translate("+SVGx+" "+SVGy+")")
 
-        DrawX.attr("transform", "translate("+SVGx+" "+SVGy+")")
-
-      //---d3 drag to compensate for screen resolution---
+        //---d3 drag to compensate for screen resolution---
         var dragBox = d3.behavior.drag()
         .on("drag", function()
-            {
+        {
+            BoxRect.attr("transform", "translate(" + (d3.event.x-30) + "," + (d3.event.y-30) + ")")
+            DrawX.attr("transform", "translate(" + (d3.event.x-30) + "," + (d3.event.y-30) + ")")
+            DragDot.attr("transform", "translate(" + (d3.event.x-30) + "," + (d3.event.y-30) + ")")
+        })
 
-                BoxRect.attr("transform", "translate(" + (d3.event.x-30) + "," + (d3.event.y-30) + ")");
-                DrawX.attr("transform", "translate(" + (d3.event.x-30) + "," + (d3.event.y-30) + ")");
-                DragDot.attr("transform", "translate(" + (d3.event.x-30) + "," + (d3.event.y-30) + ")");
-            }
-        )
-
-        d3.selectAll(".dragBox").call(dragBox);
+        d3.selectAll(".dragBox")
+        .call(dragBox)
 
         var dragDot = d3.behavior.drag()
-         .on("drag", function()
-            {
-                DragDot.attr("transform", "translate(" + (d3.event.x-60) + "," + (d3.event.y-60) + ")");
-                var tfDot = d3.transform(DragDot.attr("transform"))
-                var transDotX = tfDot.translate[0]+60
-                var transDotY = tfDot.translate[1]+60
+        .on("drag", function()
+        {
+            DragDot.attr("transform", "translate(" + (d3.event.x-60) + "," + (d3.event.y-60) + ")")
 
-                var tfBox = d3.transform(BoxRect.attr("transform"))
-                var transBoxX = tfBox.translate[0]
-                var transBoxY = tfBox.translate[1]
-                var width = transDotX-transBoxX
-                var height = transDotY-transBoxY
-                if(width>0&&height>0)
-                {
-                    BoxRect.attr("width", width)
-                    BoxRect.attr("height", height)
-                }
+            var tfDot = d3.transform(DragDot.attr("transform"))
+            var transDotX = tfDot.translate[0]+60
+            var transDotY = tfDot.translate[1]+60
+
+            var tfBox = d3.transform(BoxRect.attr("transform"))
+            var transBoxX = tfBox.translate[0]
+            var transBoxY = tfBox.translate[1]
+
+            var width = transDotX-transBoxX
+            var height = transDotY-transBoxY
+
+            if(width>0 && height>0)
+            {
+                BoxRect.attr("width", width)
+                BoxRect.attr("height", height)
             }
-        )
+        })
         .on("dragend", function()  //---creates the Box, and boxSlide environment---
+        {
+            var width = parseFloat(BoxRect.attr("width"))
+            var height = parseFloat(BoxRect.attr("height"))
+
+            if(width>30 && height>30)
             {
-                var testWidth = parseFloat(BoxRect.attr("width"))
-                var testHeight = parseFloat(BoxRect.attr("height"))
-                if(testWidth>30&&testHeight>30)
+                var tf = d3.transform(BoxRect.attr("transform"))
+
+                RectObj = pointSVG.createSVGRect()
+
+                RectObj.x = tf.translate[0]
+                RectObj.y = tf.translate[1]
+                RectObj.width = width
+                RectObj.height = height
+
+                //----compute plot mag vs JS box--
+                if(BoxActive==false)
                 {
-                    RectObj = pointSVG.createSVGRect()
-                    var tf = d3.transform(BoxRect.attr("transform"))
-                    RectObj.x = tf.translate[0]
-                    RectObj.y = tf.translate[1]
-                    RectObj.width = parseFloat(BoxRect.attr("width"))
-                    RectObj.height = parseFloat(BoxRect.attr("height"))
+                    var jd=d3.extent(Data, function(d){return d.JD;})
+                    var mag=d3.extent(Data, function (d) { return d.mag; })
 
-                    //----compute plot mag vs JS box--
-                    if(BoxActive==false)
-                    {
-                        var jd=d3.extent(Data, function(d){return d.JD;})
-                        var mag=d3.extent(Data, function (d) { return d.mag; })
+                    BoxMinMag = parseFloat(magRangeMinValue.value)
+                    BoxMaxMag = parseFloat(magRangeMaxValue.value)
 
-                        ActiveMag0 = parseFloat(magRangeMinValue.value)
-                        ActiveMag1 = parseFloat(magRangeMaxValue.value)
+                    SlideJD0=jd[0]
+                    SlideJD1=jd[1]
 
-                         ActiveJD0=jd[0]
-                         ActiveJD1=jd[1]
-                    }
-
-                    var magSpan=ActiveMag1-ActiveMag0
-                    var jdSpan=ActiveJD1-ActiveJD0
-
-                    var magAxisLength=PlotHeight-30
-                    var magYratio=magSpan/magAxisLength  //--mag/px
-
-                    var jdAxisLength=XaxisWidth
-                    var jdXratio=jdSpan/jdAxisLength //--jd/px
-                    var boxX0=RectObj.x-PlotOffsetX
-                    var boxY0=RectObj.y-PlotOffsetY
-                    var boxX1=RectObj.x+RectObj.width-PlotOffsetX
-                    var boxY1=RectObj.y+RectObj.height-PlotOffsetY
-                    var boxStartMag=ActiveMag0+(boxY0*magYratio)
-                    var boxEndMag=ActiveMag0+boxY1*magYratio
-
-                    var boxStartJD=ActiveJD0+boxX0*jdXratio
-                    var boxEndJD=ActiveJD0+boxX1*jdXratio
-
-                    //---set for next active box---
-                    ActiveMag0=boxStartMag
-                    ActiveMag1=boxEndMag
-                    ActiveJD0=boxStartJD
-                    ActiveJD1=boxEndJD
-                    //---used in box toggle slide---
-                    SlideJD0 = boxStartJD
-                    SlideJD1 = boxEndJD
-                    BoxMinMag= boxStartMag
-                    BoxMaxMag= boxEndMag
-
-                    updateDomain(boxStartJD,boxEndJD,boxStartMag,boxEndMag,0)
-                    BoxAreaBackArray.push([boxStartJD,boxEndJD,boxStartMag,boxEndMag])
-
-                    BoxRectStart = false //---stop rect---
-                    BoxRect.attr("width", 0)
-                    BoxRect.attr("height", 0)
-                    BoxRect.attr("transform", null)
-                    DragDot.attr("transform", null)
-                    BoxRect.style("display", "none")
-                    DrawX.style("display", "none")
-                    DragDot.style("display", "none")
-
-                    boxButton.style.borderStyle = "outset"
-
-                    BoxOn = false
-                    BoxRectStart = false
-                    BoxRectSet = false
-
-                    setBoxArea()
-                    startBoxSlide()
-
+                    JDspanPrev = SlideJD1-SlideJD0
                 }
+                else
+                    JDspanPrev = BoxAreaBackArray[BoxAreaBackArray.length-1][4]
+
+                getRealBoundsFromRectBounds()
+
+                setBoxArea()
+                updateDomain()                
+                startBoxSlide()
+
+                //---stop rect---
+                BoxRect.attr("width", 0)
+                BoxRect.attr("height", 0)
+                BoxRect.attr("transform", null)
+                BoxRect.style("display", "none")
+                DragDot.style("display", "none")
+                DragDot.attr("transform", null)
+                DrawX.style("display", "none")
+
+                boxButton.style.borderStyle = "outset"
+
+                BoxOn = false
+                BoxRectStart = false
+                BoxRectSet = false
             }
-        );
+        })
 
-        d3.selectAll(".dragDot").call(dragDot);
-
+        d3.selectAll(".dragDot")
+        .call(dragDot)
     }
-
 }
 
 
 //============toggle, resets, symbol transitions===============
-var BoxAreaSet = false
+
 var SlideJD0
 var SlideJD1
-var JDspanPrev //---used to set slide rect size in active box---
 var BoxMinMag
 var BoxMaxMag
-var ZoomCenterJD
-var PlotJDStart
-var PlotJDEnd
+
 var BoxAreaBackArray=[]
+var BoxAreaSet = false
+
 function setBoxArea()
 {
     var height = PlotHeight-30
 
+    var transX1 = XaxisWidth + PlotOffsetX
+    var transX0 = PlotOffsetX
+
     boxResetButton.disabled = false
+
+    //--recompute Slide  Rect width---
+    //    PlotJDStart=Data[0].JD
+    //    PlotJDEnd=Data[Data.length-1].JD
+
+    var spanJD = SlideJD1-SlideJD0 // new zoom
+
+    var slideWidth = (BoxActive) ? parseFloat(SlideRect.attr("width"))*spanJD/JDspanPrev : RectObj.width
+
+    var jdToX = slideWidth/spanJD
 
     BoxAreaSet = true
 
-    //--recompute Slide  Rect width---
-     PlotJDStart=Data[0].JD
-     PlotJDEnd=Data[Data.length-1].JD
-     var currentBoxJD=SlideJD1-SlideJD0
-    if(BoxActive==true)
-    {
-        var boxWidthFactor = currentBoxJD/JDspanPrev
-        var slideWidth = SlideRectPrevWidth*boxWidthFactor
-    }
-    else
-    {
-        var boxWidthFactor = currentBoxJD/(PlotJDEnd-PlotJDStart)
-        var slideWidth = RectObj.width//*boxWidthFactor
-        SlideRectPrevWidth = RectObj.width
-    }
-    JDspanPrev = SlideJD1-SlideJD0
+    if (slideWidth > XaxisWidth)
+        slideWidth = XaxisWidth
 
     //---translate slide rect to proper location
 
-    if(RectObj.x+RectObj.width>=1180-slideWidth)
+    //    var transX = RectObj.x-transX0
+    var transX = (SlideJD0-PlotJDStart)*jdToX+transX0
+
+    if(transX >= transX1-slideWidth)
     {
-        var transX = 1179-slideWidth
+        transX = transX1-slideWidth
         slideRightButton.setAttribute("pointer-events", "none")
         slideRightButton.setAttribute("opacity", .1)
     }
 
-    else if(RectObj.x<=80)
+    if(transX < transX0)
     {
-        var transX = 81
+        transX = transX0
         slideLeftButton.setAttribute("pointer-events", "none")
         slideLeftButton.setAttribute("opacity", .1)
     }
-    else
-    {
-        var transX = RectObj.x+RectObj.width/2-slideWidth/2
-    }
-    SlideRect.attr("transform", "translate("+ transX+" 0)")
 
+    SlideRect.attr("transform", "translate("+transX+" 0)")
     SlideRect.attr("width", slideWidth)
 
-    JDspanPrev = SlideJD1-SlideJD0
+    recenterZoomBack()
+
+    BoxAreaBackArray.push([SlideJD0, SlideJD1, BoxMinMag, BoxMaxMag, spanJD, slideWidth, transX])
+
     BoxActive = true
-
-    ZoomCenterJD = SlideJD0+(SlideJD1-SlideJD0)/2
-    if(DateFormat=="Calendar")
-      errorBarCheck.disabled=false
-
-    BoxAreaBackArray[BoxAreaBackArray.length-1][4]=slideWidth
-    BoxAreaBackArray[BoxAreaBackArray.length-1][5]=transX
-    BoxAreaBackArray[BoxAreaBackArray.length-1][6]=SlideJD0
-    BoxAreaBackArray[BoxAreaBackArray.length-1][7]=SlideJD1
-    BoxAreaBackArray[BoxAreaBackArray.length-1][8]=JDspanPrev
-    BoxAreaBackArray[BoxAreaBackArray.length-1][9]=BoxMinMag
-    BoxAreaBackArray[BoxAreaBackArray.length-1][10]=BoxMaxMag
-    BoxAreaBackArray[BoxAreaBackArray.length-1][11]=ZoomCenterJD
-    BoxAreaBackArray[BoxAreaBackArray.length-1][12]=PlotJDStart
-    BoxAreaBackArray[BoxAreaBackArray.length-1][13]=PlotJDEnd
 }
+
+

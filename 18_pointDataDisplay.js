@@ -218,15 +218,25 @@ function showMeanPointData(evt)
     var target = evt.target
     var sd = parseFloat(target.getAttribute("sd"))
     var avg = parseFloat(target.getAttribute("avg"))
-    var max = getMaxMag(Data)
-    var min = getMinMag(Data)
+    var npoints = target.getAttribute("npoints")
+    var serr = parseFloat(target.getAttribute("serr"))
+//    var max = getMaxMag(Data)
+//    var min = getMinMag(Data)
+    var max = BoxMaxMag
+    var min = BoxMinMag
     var magSpan = max-min
     var height = PlotHeight-30
     var magPerX = magSpan/height
     var sdMag = sd*magPerX
     var avgMag = min+avg*magPerX
+    var serrMag = serr*magPerX
 
-    pointDataDiv.innerHTML = "median = "+avgMag.toFixed(2)+"<br>standard deviation = "+sdMag.toFixed(2)
+//        pointDataDiv.innerHTML = "mean = "+avgMag.toFixed(2)+"<br>standard deviation = "+sdMag.toFixed(2)+"<br>number = "+npoints
+    if(npoints > 3)
+        pointDataDiv.innerHTML = "mean = "+avgMag.toFixed(2)+" / "+serrMag.toFixed(2)
+    else
+        pointDataDiv.innerHTML = "mean = "+avgMag.toFixed(1)+" ("+npoints+" points)"
+
     var scrollY = window.pageYOffset
     pointDataDiv.style.left = x+10+"px"
     pointDataDiv.style.top = scrollY+y+20+"px"

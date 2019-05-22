@@ -190,30 +190,35 @@ anotherToDateValue.value=toJD
             {
                 //---XML format---
                 var vsxText = httpVSX.responseText
+                var success
 
-                if(delimText.length>300)
+                if(success = (delimText.length>300))
                 {
                     getVSXXObj(vsxText)
                     MainRequest=true
-                     if(AllBands==true)
+                    if(AllBands==true)
                         TotalData = delim2JSON(delimText, "@@@")
-                         else
-                         {
-                            var returnedData=delim2JSON(delimText, "@@@")
-                            TotalData=userBandRequest(returnedData)
-                         }
+                    else
+                    {
+                        var returnedData=delim2JSON(delimText, "@@@")
+                        TotalData=userBandRequest(returnedData)
+                    }
 
-                        initPlot()
-                        buildJsonObj(false)
+                    initPlot()
+
+                    if (success = buildJsonObj(false))
+                    {
                         bgImg.style.display = "none"
                         navTable.style.visibility = "visible"
                         MainRequest=false
-                   setTimeout(initBox,1000) 
-                    setTimeout(findApassAtStar,5000)
+                        setTimeout(initBox,1000)
+                        setTimeout(findApassAtStar,5000)
+                    }
                 }
-                else
+                if (! success)
                 {
                     loadingStarH.innerHTML = "Data not found for this star"
+                    LoadError = "<center>Data not found for this star</center>"
                 }
                 spinner.style.webkitAnimationPlayState = 'paused';
                 spinner.style.AnimationPlayState = 'paused';
@@ -226,6 +231,7 @@ anotherToDateValue.value=toJD
             spinner.style.AnimationPlayState = 'paused';
             spinner.style.visibility = "hidden"
             loadingStarH.innerHTML = "***Database Error***"
+            LoadError = "<center>***Database Error***</center>"
         }
     }
 }
@@ -275,7 +281,8 @@ function loadInterActiveData()
         //---delimited format (@@@)---
         var delimText = http.responseText
 
-        if(delimText.indexOf("DB Error")==-1)
+        LoadError = !(delimText.indexOf("DB Error")==-1)
+        if(! LoadError)
         {
 
                 StarName=params.split("&")[3].replace(/ident=/,"").replace(/\%20/g,"")
@@ -286,26 +293,28 @@ function loadInterActiveData()
                 httpVSX.onload = callbackVSX
                 httpVSX.open("GET", url, true);
                 httpVSX.send()
-                function callbackVSX()
+            function callbackVSX()
+            {
+                //---XML format---
+                var vsxText = httpVSX.responseText
+                var success
+
+                if(success = (delimText.length>300))
                 {
-                    //---XML format---
-                    var vsxText = httpVSX.responseText
-                   
-                    if(delimText.length>300)
+                    getVSXXObj(vsxText)
+                    MainRequest=true
+                    EmptyRequest=false
+
+                    if(AllBands==true)
+                        TotalData = delim2JSON(delimText, "@@@")
+                    else
                     {
-                        getVSXXObj(vsxText)
-                        MainRequest=true
-                        EmptyRequest=false
+                        var returnedData=delim2JSON(delimText, "@@@")
+                        TotalData=userBandRequest(returnedData)
+                    }
 
-                        if(AllBands==true)
-                            TotalData = delim2JSON(delimText, "@@@")
-                        else
-                        {
-                            var returnedData=delim2JSON(delimText, "@@@")
-                            TotalData=userBandRequest(returnedData)
-                        }
-
-                        buildJsonObj(true)
+                    if (success = buildJsonObj(true))
+                    {
                         buildPlot()
                         initGrid()
 
@@ -313,15 +322,17 @@ function loadInterActiveData()
                         navTable.style.visibility = "visible"
                         MainRequest=false
                         setTimeout(findApassAtStar,5000)
-                }
-                    else
-                    {
-                        loadingStarH.innerHTML = "Data not found for this star"
                     }
-                    spinner.style.webkitAnimationPlayState = 'paused';
-                    spinner.style.AnimationPlayState = 'paused';
-                    spinner.style.visibility = "hidden"
                 }
+                LoadError = ! success
+                if (LoadError)
+                {
+                    loadingStarH.innerHTML = "Data not found for this star"
+                }
+                spinner.style.webkitAnimationPlayState = 'paused';
+                spinner.style.AnimationPlayState = 'paused';
+                spinner.style.visibility = "hidden"
+            }
         }
         else
         {

@@ -1,3 +1,64 @@
+﻿//const opType = {
+//    MORE_EQUAL: 1,
+//    LESS_EQUAL: 2
+//}
+
+//Array.prototype.arrayOfPointsSortedByJD_FindIndex = function(optype, value)
+//{
+//    var t = Object(this)
+//    var length = t.length
+//    if (length == 0)
+//        return null // empty array
+
+//    var jd
+
+//    var maxI = length - 1
+//    jd = t[maxI].getAttribute("xValTop")
+//    if(value > jd)
+//        return length // greater than all elements
+
+//    var minI = 0
+//    jd = t[minI].getAttribute("xValTop")
+//    if(value < jd)
+//        return -1 // less than all elements
+
+//    var thisI = Math.floor((maxI+minI)/2)
+//    var lastI
+
+//    switch (optype)
+//    {
+//    case opType.MORE_EQUAL:
+//        do {
+//            lastI = thisI
+//            jd = t[thisI].getAttribute("xValTop")
+//            if(value > jd)
+//                minI = thisI
+//            else if(value < jd)
+//                maxI = thisI
+//            thisI = Math.floor((maxI+minI)/2)
+//        }
+//        while(thisI != lastI)
+//        if(jd < value)
+//            thisI++
+//        break
+//    case opType.LESS_EQUAL:
+//        do {
+//            lastI = thisI
+//            jd = t[thisI].getAttribute("xValTop")
+//            if(value < jd)
+//                maxI = thisI
+//            else if(value > jd)
+//                minI = thisI
+//            thisI = Math.floor((maxI+minI)/2)
+//        }
+//        while(thisI != lastI)
+//        if(jd > value)
+//            thisI--
+//        break
+//    }
+//    return thisI
+//}
+
 //---real numbers---
 function numberWithCommas(realNum)
 {
@@ -89,10 +150,10 @@ function openDiv(myDiv)
     var divD3 = d3.select("#"+myDiv)
     if(myDiv=="meanCurveDiv")
     {
-        if(MeanActive==true)
-        {
-            setMeanBin()
-        }
+//        if(MeanActive==true)
+//        {
+//            setMeanBin()
+//        }
         dataSelectDiv.style.visibility = "hidden"
         navTable.style.visibility = "hidden"
         MeanOpen = true
@@ -103,13 +164,16 @@ function openDiv(myDiv)
     else
     {
         var height = divDoc.scrollHeight
+
         if(myDiv!="contribSelectDiv" && height>1000)
         {
             height = 1000
             divD3.style("overflow-y", "scroll")
         }
-            if(myDiv=="contribSelectDiv" || myDiv=="symbolDataPacketDiv" )
-                divD3.transition().duration(500).style("height", height+"px")
+
+        if(myDiv=="contribSelectDiv" || myDiv=="symbolDataPacketDiv" )
+            divD3.transition().duration(500).style("height", height-20+"px")
+
         if(myDiv=="plotAnotherCurveDiv")
         {
             sendAnotherMsgDiv.innerHTML=""
@@ -126,13 +190,15 @@ function openDiv(myDiv)
                 setPlotAnotherCurveTodayDate()
             if(AllBands==false)
                 userBandRequestDiv.style.visibility='visible'
-
         }
-          if(divDoc.style.visibility=="hidden")
-          divD3.transition().duration(500).style("height", height+"px")
+
+        if(divDoc.style.visibility=="hidden")
+            divD3.transition().duration(500).style("height", height+"px")
     }
-     divDoc.style.visibility = "visible"
+    divDoc.style.visibility = "visible"
 }
+
+
 function closeDiv(myDiv)
 {
     /*---closes/hides a DIV w/transition---
@@ -150,58 +216,70 @@ function closeDiv(myDiv)
             plotAnotherCurveCloseButton @ index.htm
     */
     var divD3 = d3.select("#"+myDiv)
-        if(myDiv=="plotAnotherCurveDiv")
+    if(myDiv=="plotAnotherCurveDiv")
+    {
+        userBandRequestDiv.style.visibility='hidden'
+        //---reset pane/preferences---
+        myStarNameSelect.selectedIndex=0
+        // anotherStarNameValue.value=""
+        anotherFromDateValue.style.background="linen"
+/*
+        //---uncheck all preferred bands--
+        var unCheckArray=["Vis","Faint","B","V","R","I","U","J","H","K","CV","CR","TB","TG","TR","SU","SG","SR",
+                          "SI","SZ","RJ","IJ","STU","STV","STB","STY","STHBW","STHBN","MA","MB","MI","NA","Blue","Green","Yellow","Orange",
+                          "Red","ZS","Y","HA","HAC"]
+        for(var k=0;k<unCheckArray.length;k++)
         {
-                userBandRequestDiv.style.visibility='hidden'
-                  //---reset pane/preferences---
-                  myStarNameSelect.selectedIndex=0
-                 // anotherStarNameValue.value=""
-                  anotherFromDateValue.style.background="linen"
-                  /*
-                    //---uncheck all preferred bands--
-                    var unCheckArray=["Vis","Faint","B","V","R","I","U","J","H","K","CV","CR","TB","TG","TR","SU","SG","SR",
-                    "SI","SZ","RJ","IJ","STU","STV","STB","STY","STHBW","STHBN","MA","MB","MI","NA","Blue","Green","Yellow","Orange",
-                    "Red","ZS","Y","HA","HAC"]
-                    for(var k=0;k<unCheckArray.length;k++)
-                    {
-                        var bnd=unCheckArray[k]
-                        document.getElementById("request"+bnd+"Check").checked=false
-                    }
-                    userBandAllCheck.checked=true
-                    */
+            var bnd=unCheckArray[k]
+            document.getElementById("request"+bnd+"Check").checked=false
         }
+        userBandAllCheck.checked=true
+*/
+    }
 
 
     if(myDiv=="meanCurveDiv")
     {
-      
         dataSelectDiv.style.visibility = "visible"
         navTable.style.visibility = "visible"
         MeanOpen = false
         MeanG.style("display", "none")
         divD3.style("visibility", "hidden")
-        var points = PlotSVG.selectAll(".Points")[0]
-        for(var k = 0; k<points.length; k++)
-        {
-            var pnt = points[k]
-            pnt.removeAttribute("opacity")
-            var myBand = pnt.getAttribute("band")
-            if(eval("band"+myBand+"Check.checked"))
-                pnt.style.display = "block"
-                else
-                    pnt.style.display = "none"
-        }
-        if(document.getElementById("bandFaintCheck"))
-         if(bandFaintCheck.checked==false)
-        {
-            for(var k = 0; k<points.length; k++)
-            {
-                var pnt = points[k]
-                var faint = pnt.getAttribute("faint")
-                if(faint!="0")
-                    pnt.style.display = "none"
-            }
-        }
+        if(MeanBand)
+            SymbolG.selectAll("."+MeanBand+".selected")
+            .style("opacity", 1)
+        MeanActive = false
+//        if(MeanBand)
+//        {
+//            var meanObs = SymbolG.selectAll("."+MeanBand+".trimmed.selected")[0]
+//            for(var k = 0; k<meanObs.length; k++)
+//                meanObs[k].removeAttribute("opacity")
+//        }
+//        var points = SymbolG.selectAll(".Points.trimmed.selected")[0]
+
+//        for(var k = 0; k<points.length; k++)
+//        {
+//            var pnt = points[k]
+//            pnt.removeAttribute("opacity")
+//            var myBand = pnt.getAttribute("band")
+////            if(eval("band"+myBand+"Check.checked"))
+//            var myBandChecked = document.getElementById("band"+myBand+"Check").checked
+//            if(myBandChecked)
+//                pnt.style.display = "block"
+//            else
+//                pnt.style.display = "none"
+//        }
+
+//        if(bandFaintCheck.checked==false)
+//        {
+//            for(var k = 0; k<points.length; k++)
+//            {
+//                var pnt = points[k]
+//                var faint = pnt.getAttribute("faint")
+//                if(faint!="0")
+//                    pnt.style.display = "none"
+//            }
+//        }
     }
     else
     {
@@ -209,10 +287,10 @@ function closeDiv(myDiv)
         divD3.style("overflow-y", "hidden")
         divD3.transition().duration(500).style("height", 1+"px")
         .each("end", function()
-            {
-                divD3.style("visibility", "hidden")
-                divD3.style("overflow", "hidden")
-            }
+        {
+            divD3.style("visibility", "hidden")
+            divD3.style("overflow", "hidden")
+        }
         )
         if(myDiv=="symbolDataPacketDiv")
         {

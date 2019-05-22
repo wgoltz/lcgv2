@@ -49,7 +49,8 @@ function initGrid()
         .tickFormat("")
     )
 
-
+    scalePoints()
+    scaleAxes()
 }
 
 function gridPrefCheckClicked()
@@ -87,7 +88,7 @@ function make_y_axis()
 function make_x_axisJulian()
 {
     /*---the x grid lines---
-    GridXG.call(make_x_axisJulian)
+    GridXG.call(make_x_axisJulian())
         Called from:
            julianDateRadioClicked @ 04_buildPlot.js
            reset_axis_slide @ 07_boxSlide.js

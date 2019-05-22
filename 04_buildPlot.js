@@ -18,6 +18,7 @@ var YaxisRight
 var PointsG
 var SymbolG
 var SymbolScaleRatio = 10
+
 //-------------------var DrawX //---the Box---
 //----------------var BoxRect //--the Box---
 
@@ -51,8 +52,12 @@ function clearPreviousPlot()
         horizLine.style.display = "none"
         SlideCoverRect.style("display", "none")
         SlideRect.attr("width", "0")
+
         slideLeftButton.setAttribute("opacity", "0")
+        slideLeftButton.setAttribute("pointer-events", "none")
         slideRightButton.setAttribute("opacity", "0")
+        slideRightButton.setAttribute("pointer-events", "none")
+
         boxButton.disabled=false
         boxResetButton.disabled=true
         boxButton.style.borderStyle = "outset"
@@ -82,11 +87,12 @@ function clearPreviousPlot()
         errorBarCheck.checked = false
 
         ContribCntSorted=false
-        sortContribSelect.selectedIndex=1
-        ErrorBarG.selectAll("*").remove()
-        if(document.getElementById("errorBarG"))
-            for(var k = errorBarG.childNodes.length-1; k>=0; k--)
-                errorBarG.removeChild(errorBarG.childNodes.item(k))
+        sortContribSelect.selectedIndex=0 // alphabetic
+
+//        ErrorBarG.selectAll("*").remove()
+//        if(document.getElementById("errorBarG"))
+//            for(var k = errorBarG.childNodes.length-1; k>=0; k--)
+//                errorBarG.removeChild(errorBarG.childNodes.item(k))
 
         ErrorBarActive = false
         ErrorBarInit = false
@@ -97,87 +103,111 @@ function clearPreviousPlot()
         PrevContribHighlight=null
         PrevContribBGcolor=null
         ContribHighlightArray=[]
+
+// clear history
+        BoxAreaBackArray=[]
+        ContribCheckArray = null
    }
    else
-   navTable.style.visibility="visible"
+       navTable.style.visibility="visible"
+}
+
+//---needed for APASS data---
+function getMaxJD(data) {
+    var maxJD;
+    var index;
+    for (var i=0 ; i<data.length ; i++) {
+        if (!maxJD || data[i].JD > maxJD)
+        {
+            maxJD= data[i].JD;
+            index=i
+        }
+    }
+    return [maxJD,index]
+}
+function getMinJD(data) {
+    var minJD;
+    var index;
+    for (var i=0 ; i<data.length ; i++) {
+        if (!minJD || data[i].JD < minJD)
+        {
+            minJD= data[i].JD;
+            index=i
+        }
+    }
+    return [minJD,index]
+}
+
+function getMaxMag(data)
+{
+    var maxMag;
+    for (var i = 0; i<data.length; i++)
+    {
+        if (!maxMag || data[i].mag > maxMag)
+        {
+            maxMag = data[i].mag;
+        }
+    }
+    return maxMag
+}
+function getMinMag(data)
+{
+    var minMag;
+    for (var i = 0; i<data.length; i++)
+    {
+        if (!minMag || data[i].mag < minMag)
+        {
+            minMag = data[i].mag;
+        }
+    }
+    return minMag
 }
 
 //--used in cross-browser positioning---
 var PlotTransY = 25
 var MagMax //---size box y--
 var MagMin //---size box y--
+
+
 function buildPlot()
 {
-
-
     /*---Creates the plot for this star and time line---
         Called from:
            buildJsonObj @ 02_buildData.js
            initPlot @ 03_initPlot.js
     */
 
-    //---date format---
-    if(julianDateRadio.checked==true)
-            DateFormat = "Julian"
-        else
-            DateFormat = "Calendar"
+    //======data==================
+    Data = ObjJSON.slice(0) //----copy ObjJSON via 02_buildData.js---
 
-            //======data==================
-            Data = ObjJSON.slice(0) //----copy ObjJSON via 02_buildData.js---
+    var formatDate = d3.time.format.utc("%Y/%m/%d %H:%M:%S")
 
-            var formatDate = d3.time.format.utc("%Y/%m/%d %H:%M:%S")
+    Data.forEach(function(d, i)
+    {
+        d.time = formatDate.parse(d.time);
+    })
 
-            Data.forEach(function(d, i)
-                {
-                    d.time = formatDate.parse(d.time);
-                  
-                }
-            );
-
-
-    //---needed for APASS data---
-       function getMaxJD(Data) {
-        var maxJD;
-        var index;
-        for (var i=0 ; i<Data.length ; i++) {
-            if (!maxJD || Data[i].JD > maxJD)
-            {
-                maxJD= Data[i].JD;
-                index=i
-             }
-        }
-        return [maxJD,index]
-    }
-    function getMinJD(Data) {
-        var minJD;
-        var index;
-        for (var i=0 ; i<Data.length ; i++) {
-            if (!minJD || Data[i].JD < minJD)
-            {
-                minJD= Data[i].JD;
-                index=i
-             }
-        }
-        return [minJD,index]
-    }
+    TrimmedData = [].concat(Data)
+    I0 = 0
+    I1 = TrimmedData.length - 1
 
     var minDateIndex=getMinJD(Data)[1]
-   
     var maxDateIndex=getMaxJD(Data)[1]
+
     var minDate = Data[minDateIndex].time;
     var maxDate = Data[maxDateIndex].time;
 
     if(mtypeSelect.selectedIndex==1)
         var yAxisUnits = "Differential Magnitude"
-        else
-            var yAxisUnits = "Magnitude" //---left y axis--
+    else
+        var yAxisUnits = "Magnitude" //---left y axis--
 
     XaxisWidth = PlotWidth-130
     var height = PlotHeight-30
 
     GridG = PlotG.append("g")
     .attr("id", "gridG")
-     .attr("shape-rendering" ,"geometricPrecision")
+    .attr("shape-rendering" ,"geometricPrecision")
 
     var newG = PlotG.append("g")
     .attr("id", "axisPlotG")
@@ -187,31 +217,10 @@ function buildPlot()
     .range([0, XaxisWidth])
     .domain([minDate, maxDate])
 
-
- var calendarTicks=XscaleCalendar.ticks().length;
-
-if(calendarTicks>11)
-{
-    var txtAnchor="start"
-    var rotate="rotate(7)"
-    var timeTickFormat = d3.time.format.utc("%Y/%m/%d %H:%M")
-    var yText=10
-}
-else
-{
-    var txtAnchor="middle"
-    var rotate=null
-     var timeTickFormat = d3.time.format.utc("%Y/%m/%d %H:%M")
-    var yText=14
-}
-
-   XaxisCalendar = d3.svg.axis()
+    XaxisCalendar = d3.svg.axis()
     .scale(XscaleCalendar)
     .orient("top")
-  .tickFormat(timeTickFormat)
-
-
-
+//    .tickFormat(timeTickFormat)
 
     XscaleJulian = d3.scale.linear()
     .range([0, XaxisWidth+.5]) //---added .5 to assure tick visibility--
@@ -220,11 +229,6 @@ else
     XaxisJulian = d3.svg.axis()
     .scale(XscaleJulian)
     .orient("top")
-
-    if(PlotJDEnd-PlotJDStart>=10)
-        XaxisJulian.tickFormat(d3.format("f"))
-    else
-        XaxisJulian.tickFormat(d3.format(".2f"))
 
     XscaleTop = d3.scale.linear()
     .range([0, XaxisWidth]);
@@ -242,6 +246,7 @@ else
 
     YR = d3.scale.linear() //---right---
     .range([height, 0]);
+
     YaxisRight = d3.svg.axis().scale(YR)
     .orient("left")
     .tickFormat("")
@@ -250,13 +255,13 @@ else
     var min = getMinMag(Data)
     MagMax = max
     MagMin = min
-    YL.domain([max, min]);
+    YL.domain([max, min])
     YR.domain([max, min])
     magRangeMaxValue.value = max
     magRangeMinValue.value = min
     resetMagRangeButton.disabled = true
 
-     //---XAxis(Calendar) Bottom---------
+    //---XAxis(Calendar) Bottom---------
     XaxisCalendarG = newG.append("g")
     .attr("id", "xaxisCalendarG")
     .style("visibility", "hidden")
@@ -266,45 +271,22 @@ else
     .attr("class", "x axis calendar")
     .attr("shape-rendering" ,"geometricPrecision")
     .call(XaxisCalendar)
-    .selectAll("text")
-    .attr("y", yText)
-    .attr("x", 0)
-    .attr("dy", ".1em")
-    .attr("transform", rotate)
-    .style("text-anchor", txtAnchor)
-    .style("font-size", "14px")
-    .attr("stroke", "none")
-    .attr("fill", "black")
 
     //---XAxis(Julian) Bottom---------
     XaxisJulianG = newG.append("g")
     .style("visibility", "hidden")
     .attr("id", "xaxisJulianG")
     .attr("stroke-width", "1")
-     .attr("shape-rendering" ,"geometricPrecision")
+    .attr("shape-rendering" ,"geometricPrecision")
     .attr("fill", "none")
     .attr("transform", "translate(0," + height + ")")
     .attr("class", "x axis julian")
     .call(XaxisJulian)
-    .selectAll("text")
-    .attr("class", "XaxisJulianFont")
-    .attr("y", 14)
-    .attr("x", 0)
-    .attr("dy", ".1em")
-    .style("text-anchor", "middle")
-    .style("font-size", "16px")
-    .attr("stroke", "none")
-    .attr("fill", "black");
 
     //---XAxis Top---------
-   if(DateFormat=="Calendar")
-        XaxisTop.scale(XscaleCalendar)
-    else
-       XaxisTop.scale(XscaleJulian)
-
     XaxisTopG = newG.append("g")
     .attr("pointer-events", "none")
-     .attr("shape-rendering" ,"geometricPrecision")
+    .attr("shape-rendering" ,"geometricPrecision")
     .attr("stroke", "black")
     .attr("stroke-width", "1")
     .attr("fill", "none")
@@ -313,7 +295,7 @@ else
 
     YleftG = newG.append("g")
     .attr("class", "y axis left")
-     .attr("shape-rendering" ,"geometricPrecision")
+    .attr("shape-rendering" ,"geometricPrecision")
     .attr("stroke", "black")
     .attr("stroke-width", "2")
     .attr("fill", "none")
@@ -350,40 +332,34 @@ else
     .style("text-anchor", "middle")
     .style("stroke", "none")
 
-    if(DateFormat=="Calendar")
-        d3.select("#xAxisName").text("U.T.C. Calendar Date")
-        .attr("y", 570)
-        else
-            d3.select("#xAxisName").text("Julian Days")
-            .attr("y", 560)
+    //---right y axis-----------------
+    newG.append("g")
+    .attr("class", "y axis right")
+    .attr("transform", "translate("+XaxisWidth+" 0)")
+    .attr("stroke", "black")
+    .attr("stroke-width", ".5")
+    .attr("shape-rendering" ,"geometricPrecision")
+    .attr("fill", "none")
+    .call(YaxisRight)
 
-            //---right y axis-----------------
-            newG.append("g")
-            .attr("class", "y axis right")
-            .attr("transform", "translate("+(XaxisWidth)+" 0)")
-            .attr("stroke", "black")
-            .attr("stroke-width", ".5")
-            .attr("shape-rendering" ,"geometricPrecision")
-            .attr("fill", "none")
-            .call(YaxisRight)
+    //----a parent svg element to hold symbols----
+    var pntSVG = PlotG.append("svg")
+    .attr("overflow", "visible")
+    .attr("id", "pointSVG")
 
-            //----a parent svg element to hold symbols----
-            var pntSVG = PlotG.append("svg")
-            .attr("overflow", "visible")
-            .attr("id", "pointSVG")
+    pntSVG.append("defs")
+    .append("clipPath")
+    .attr("id", "clip")
+    .append("rect")
+    .attr("x", -5)
+    .attr("y", -5)
+    .attr("width", PlotWidth-115)
+    .attr("height", PlotHeight-20)
 
-            pntSVG.append("defs").append("clipPath")
-            .attr("id", "clip")
-            .append("rect")
-            .attr("x", -5)
-            .attr("y", -5)
-            .attr("width", PlotWidth-115)
-            .attr("height", PlotHeight-20)
+    PointsG = pntSVG.append("g")
+    .attr("clip-path", "url(#clip)")
 
-            PointsG = pntSVG.append("g")
-            .attr("clip-path", "url(#clip)")
-
-            SymbolG = PointsG.append("g")
+    SymbolG = PointsG.append("g")
     .attr("id", "symbolPlotG")
     .attr("stroke", "black")
 
@@ -391,128 +367,89 @@ else
     .data(Data)
     .enter().append("g")
     .attr("id", function (d)
-        {
-            return "point"+d.index
-        }
-    )
+    {
+        return "point"+d.index
+    })
     .attr("dataLoc", function (d, i)
-        {
-            return i
-        }
-            )
-            .attr("class", function (d)
-                {
-                    var classes = "Points "+d.band
-                    if(d.by=="APASS")
-                        classes += " APASS"
-                        return classes
-                }
-            ) //---mean---
-            .attr("by", function (d)
-                {
-                    return d.by
-                }
-            )
-            .attr("obsID", function (d)
-                {
-                    return d.obsID
-                }
-            )
-            .attr("band", function (d)
-                {
-                    return d.band
-                }
-            )
-            .attr("uncert", function (d)
-                {
-                    return d.uncert
-                }
-            )
-            .attr("comCode", function (d)
-                {
-                    return d.comCode
-                }
-            )
-            .attr("faint", function (d)
-                {
-                    return d.fainterThan
-                }
-            )
-            .attr("comment", function (d)
-                {
-                     var comment=d.comment
-                     if(comment.indexOf("\"")!=-1)
-                        comment.replace(/\"/g, "\"")
-                    return comment
-                }
-            )
-            .attr("xValTop", function (d, i)
-                {
-                    return d.JD;
-                }
-            )
-            .attr("xVal", function (d, i)
-                {
-                    return d.calDate;
-                }
-            )
-            .attr("yVal", function (d)
-                {
-                    return d.mag;
-                }
-            )
-            .attr("stroke-width", function(d)
-                {
-                    if(d.band=="Vis")
-                        return .1
-                        else
-                            return .025
+    {
+        return i
+    })
+    .attr("class", function (d)
+    {
+        var classes = "Points "+d.band+" "+d.by+" selected trimmed"
+        if(d.fainterThan==1)
+            classes += " faint showFaint"
+        return classes
+    })
+    .attr("by", function (d)
+    {
+        return d.by
+    })
+    .attr("obsID", function (d)
+    {
+        return d.obsID
+    })
+    .attr("band", function (d)
+    {
+        return d.band
+    })
+    .attr("uncert", function (d)
+    {
+        return d.uncert
+    })
+    .attr("comCode", function (d)
+    {
+        return d.comCode
+    })
+    .attr("faint", function (d)
+    {
+        return d.fainterThan
+    })
+    .attr("comment", function (d)
+    {
+        var comment=d.comment
+        if(comment.indexOf("\"")!=-1)
+            comment.replace(/\"/g, "\"")
+        return comment
+    })
+    .attr("xValTop", function (d, i)
+    {
+        return d.JD;
+    })
+    .attr("xVal", function (d, i)
+    {
+        return d.calDate;
+    })
+    .attr("yVal", function (d)
+    {
+        return d.mag;
+    })
+    .attr("stroke-width", function(d)
+    {
+        if(d.band=="Vis")
+            return .1
+        else
+            return .025
+    })
 
-                }
-            )
-            .style("display", "block")
+    //---above symbols---
+    ErrorBarG = PlotG.append("g") //---uncert---
+    .attr("id", "errorBarG")
+    .attr("clip-path", "url(#clip)")
+    .style("display", "none")
+    .attr("pointer-events", "none")
+    .attr("stroke", "#9370DB")
 
-            //---above symbols---
-            ErrorBarG = PlotG.append("g") //---uncert---
-            .attr("id", "errorBarG")
-            .attr("clip-path", "url(#clip)")
-            .style("display", "none")
-            .attr("pointer-events", "none")
-            .attr("stroke", "#9370DB")
+    SpectraG = PlotG.append("g") //---spectra circles---
+    .attr("id", "spectraG")
 
-            SpectraG = PlotG.append("g") //---spectra circles---
-            .attr("id", "spectraG")
 
-        if(DateFormat=="Calendar")
-        {
-            Points.attr("transform", function (d)
-                {
-                    return "translate("+XscaleCalendar(d.time)+" "+YL(d.mag)+")scale(10)"
-                }
-            )
-
-            xaxisJulianG.style.visibility = "hidden"
-            xaxisCalendarG.style.visibility = "visible"
-        }
-        else if(DateFormat=="Julian")
-        {
-
-            Points.attr("transform", function (d)
-                {
-                    return "translate("+XscaleJulian(d.JD)+" "+YL(d.mag)+")scale(10)"
-                }
-            )
-            xaxisCalendarG.style.visibility = "hidden"
-            xaxisJulianG.style.visibility = "visible"
-        }
-
-        addSymbolPolygons() //---add the symbol's polygons to each g--- see: symbols.js---
+    addSymbolPolygons() //---add the symbol's polygons to each g--- see: symbols.js---
 
     if(Mobile==false && ShowMostRecentOb==true)
     {
         MostRecentOb = symbolPlotG.lastChild
         highlightMostRecentOb()
-
     }
     else if(Mobile==false)
     {
@@ -520,8 +457,7 @@ else
     }
     else
     {
-       navTable.style.visibility="hidden"
-
+        navTable.style.visibility="hidden"
     }
 
     //---add lines and circles to print data see:print.js---
@@ -574,220 +510,48 @@ else
     .style("display", "none")
 }
 
-function getMaxMag(Data)
-{
-    var maxMag;
-    for (var i = 0; i<Data.length; i++)
-    {
-        if (!maxMag || Data[i].mag > maxMag)
-        {
-            maxMag = Data[i].mag;
-        }
 
-    }
-    return maxMag
-}
-function getMinMag(Data)
-{
-    var minMag;
-    for (var i = 0; i<Data.length; i++)
-    {
-        if (!minMag || Data[i].mag < minMag)
-        {
-            minMag = Data[i].mag;
-        }
-
-    }
-    return minMag
-}
 
 //============Date Format Selection=============
 //---on radio click---
 function julianDateRadioClicked()
-{   
-    DateFormat = "Julian"
-    if(RequestInitDateFormat=="Julian"&& hiddenFromJD.value!="All")
+{
+    if(RequestInitDateFormat=="Julian" && hiddenFromJD.value!="All")
     {
         requestedDateCheck.disabled=false
         requestedTR.style.opacity="1"
     }
-    if(BoxAreaSet==false)
-    {
-        XscaleCalendar.domain(d3.extent
-            (Data, function(d)
-                {
-                    return d.time;
-                }
-            )
-        )
 
-        XscaleJulian.domain(d3.extent
-            (Data, function(d)
-                {
-                    return d.JD;
-                }
-            )
-        )
+    DateFormat = "Julian"
 
-    }
-    else
-    {
-        var date0 = julian2Date(SlideJD0+DeltaJD)
-        var date1 = julian2Date(SlideJD1+DeltaJD)
-        var formatDate = d3.time.format.utc("%Y/%m/%d %H:%M:%S")
-        var ext0 = formatDate.parse(date0)
-        var ext1 = formatDate.parse(date1)
-        XscaleCalendar.domain([ext0, ext1]);
-        XscaleTop.domain([ext0, ext1]);
-       XscaleJulian.domain([SlideJD0, SlideJD1]);
-
-   }
-
-    PlotSVG.select(".x.axis.julian")
-    .attr("shape-rendering" ,"geometricPrecision")
-    .call(XaxisJulian)
-    .selectAll("text")
-    .attr("y", 14)
-    .attr("x", 0)
-    .attr("dy", ".35em")
-    .style("text-anchor", "middle")
-    .style("font-size", "14px")
-    .attr("stroke", "none")
-    .attr("fill", "black");
-
-
-
-    XaxisTop.scale(XscaleJulian)
-    XaxisTopG.call(XaxisTop)
-
-    var height = PlotHeight-30
-
-    GridXG.call(make_x_axisJulian()
-        .tickSize(-height, 0, 0)
-        .tickFormat("")
-    )
+    scaleAxes(scaleAxesType.Days)
 
     xaxisJulianG.style.visibility = "visible"
     xaxisCalendarG.style.visibility = "hidden"
+
     d3.select("#xAxisName").text("Julian Days")
     .attr("y", 560)
 }
 
 function calendarDateRadioClicked()
 {
-
-
     requestedDateCheck.disabled=true
     requestedTR.style.opacity=".3"
     if(BoxAreaSet==false)
-    {
         if(requestedDateCheck.checked==true)
         {
-           requestedTR.style.opacity=".3"
-           requestedDateCheck.checked=false
-           requestedDateChecked()
+            requestedTR.style.opacity=".3"
+            requestedDateCheck.checked=false
+            requestedDateChecked()
         }
-        XscaleCalendar.domain(d3.extent
-            (Data, function(d)
-                {
-                    return d.time;
-                }
-            )
-        )
-
-        XscaleJulian.domain(d3.extent
-            (Data, function(d)
-                {
-                    return d.JD;
-                }
-            )
-        )
-
-    }
-    else if(BoxActive==true)
-    {
-
-        var date0 = julian2Date(SlideJD0+DeltaJD)
-        var date1 = julian2Date(SlideJD1+DeltaJD)
-
-
-        var formatDate = d3.time.format.utc("%Y/%m/%d %H:%M:%S")
-        var ext0 = formatDate.parse(date0)
-        var ext1 = formatDate.parse(date1)
-
-        XscaleCalendar.domain([ext0, ext1]);
-        XscaleTop.domain([ext0, ext1]);
-       XscaleJulian.domain([SlideJD0, SlideJD1]);
-
-   }
 
     DateFormat = "Calendar"
-    if(BoxAreaSet==true)
-        var jdDif = JDspanPrev
-        else
-            var jdDif = (PlotJDEnd-PlotJDStart)
 
-        if(jdDif>=10)
-        {
-            var timeTickFormat = d3.time.format.utc("%Y/%m/%d")
-            XaxisCalendar.tickFormat(timeTickFormat)
-            if(BoxAreaSet==false)
-                PlotSVG.select(".x.axis.calendar")
-                .call(XaxisCalendar)
-                .selectAll("text")
-                .attr("y", 14)
-                .attr("x", 0)
-                .attr("dy", ".1em")
-                .style("text-anchor", "middle")
-                .style("font-size", "14px")
-                .attr("stroke", "none")
-                .attr("fill", "black");
-            else
-                PlotSVG.select(".x.axis.calendar")
-                .call(XaxisCalendar)
-                .selectAll("text")
-                .attr("y", 10)
-                .attr("x", 0)
-                .attr("dy", ".1em")
-                .style("text-anchor", "start")
-                .style("font-size", "14px")
-                .attr("stroke", "none")
-                .attr("fill", "black")
-                .attr("transform", "rotate(7)")
-        }
-        else
-        {
-         /*
-            var timeTickFormat = d3.time.format.utc("%Y/%m/%d %H:%M")
-            XaxisCalendar.tickFormat(timeTickFormat)
-           XaxisCalendarG.call(XaxisCalendar)
-        */
-            PlotSVG.select(".x.axis.calendar")
-            .call(XaxisCalendar)
-            .selectAll("text")
-            .attr("y", 10)
-            .attr("x", 0)
-            .attr("dy", ".1em")
-            .style("text-anchor", "start")
-            .style("font-size", "14px")
-            .attr("stroke", "none")
-            .attr("fill", "black")
-            .attr("transform", "rotate(7)")
+    scaleAxes(scaleAxesType.Days)
 
-        }
+    xaxisJulianG.style.visibility = "hidden"
+    xaxisCalendarG.style.visibility = "visible"
 
-        XaxisTop.scale(XscaleCalendar)
-        XaxisTopG.call(XaxisTop)
-
-        var height = PlotHeight-30
-
-        GridXG.call(make_x_axisCalendar()
-            .tickSize(-height, 0, 0)
-            .tickFormat("")
-        )
-        xaxisJulianG.style.visibility = "hidden"
-        xaxisCalendarG.style.visibility = "visible"
-        d3.select("#xAxisName").text("U.T.C. Calendar Date")
-        .attr("y", 570)
-
+    d3.select("#xAxisName").text("U.T.C. Calendar Date")
+    .attr("y", 570)
 }

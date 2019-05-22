@@ -1,4 +1,4 @@
-var ErrorBarData =[] //[value,JD] see buildData.js---
+//var ErrorBarData =[] //[value,JD] see buildData.js---
 var ErrorBarG
 var ErrorBars
 var ErrorBarInit = false
@@ -11,49 +11,12 @@ function errorBarCheckClicked()
            errorBarCheck @ index.htm
     */
 
+    ErrorBarActive = errorBarCheck.checked
 
-    if(errorBarCheck.checked==true)
-    {
-        resetMean()
-        meanCurveButton.disabled = true
-        meanCurveDiv.style.visibility = "hidden"
-        if(ErrorBarInit==false)
-            buildErrorBars()
-            else
-            {
+    if(ErrorBarInit==false)
+        buildErrorBars()
 
-                for(var k = 0; k<ErrorBarData.length; k++)
-                {
-                    var bar = document.getElementById("errorBar"+k)
-                    var symbolId = "point"+ErrorBarData[k].index
-                    var symbol = document.getElementById(symbolId)
-                    var uncert = parseFloat(symbol.getAttribute("uncert"))
-                    if(uncert>UncertGT)
-                    {
-                        if(symbol.style.display=="block")
-                            bar.style.display = "block"
-                            else
-                                bar.style.display = "none"
-
-                    }
-
-                }
-
-            }
-
-            ErrorBarActive = true
-            ErrorBarG.style("display", "block")
-
-    }
-    else
-    {
-
-        meanCurveButton.disabled = false
-
-        ErrorBarActive = false
-        ErrorBarG.style("display", "none")
-    }
-
+    displayPoints()
 }
 
 function errorBarSelected()
@@ -64,47 +27,16 @@ function errorBarSelected()
     */
     if(errorBarSelect.selectedIndex>0)
     {
-
         UncertGT = parseFloat(errorBarSelect.options[errorBarSelect.selectedIndex].value)
-        if(errorBarCheck.checked==true)
-        {
-            ErrorBarG.selectAll(".errorBar")
-            .data(ErrorBarData)
-            .style("display", function(d)
-                {
-                    if(d.uncert>UncertGT) return "block"; else return "none"
-                }
-            )
 
-            //---show only symbols with error bar---
-            for(var k = 0; k<ErrorBarData.length; k++)
-            {
-                var bar = document.getElementById("errorBar"+k)
-
-                var symbolId = "point"+ErrorBarData[k].index
-                var symbol = document.getElementById(symbolId)
-                var uncert = parseFloat(symbol.getAttribute("uncert"))
-                if(uncert>UncertGT)
-                {
-                    if(symbol.style.display=="block")
-                        bar.style.display = "block"
-                        else
-                            bar.style.display = "none"
-                }
-                else
-                {
-                    bar.style.display = "none"
-                }
-
-            }
-
-        }
+        if(ErrorBarActive)
+            displayPoints()
     }
-
 }
 
+
 var UncertGT = 0
-var MagnitudeRange
+
 function buildErrorBars()
 {
     /*---Create the Error Bars---
@@ -112,104 +44,26 @@ function buildErrorBars()
            errorBarCheckClicked @ 10_errorBar.js
     */
 
-    var height = PlotHeight-30
-
-    var max = getMaxMag(Data)
-    var min = getMinMag(Data)
-
-    var magXFactor = height/(max-min)
-
     ErrorBars = ErrorBarG.selectAll(".errorBar")
-    .data(ErrorBarData)
+    .data(Data)
     .enter().append("line")
-    .style("display", function(d)
-        {
-            if(d.uncert>UncertGT) return "block"; else return "none"
-        }
-    )
     .attr("id", function(d, i)
-        {
-            return "errorBar"+i
-        }
-    )
+    {
+        return "errorBar"+i
+    })
     .attr("class", "errorBar")
     .attr("stroke-width", function(d)
-        {
-            if(d.uncert<.05) return .4; else return .8
-        }
-    )
+    {
+        return (d.uncert<.05) ? .4 : .8
+    })
     .attr("pointer-events", "none)")
-//    .attr("marker-start", "url(#startArrow)")
-//    .attr("marker-end", "url(#endArrow)")
-    .attr("marker-start", "url(#endArrow)")
-    .attr("marker-end", "url(#startArrow)")
-
+    .attr("marker-start", "url(#startArrow)")
+    .attr("marker-end", "url(#endArrow)")
     .attr("x1", 0)
     .attr("x2", 0)
 
-    .attr("y1", function(d)
-        {
-//        return -d.uncert*magXFactor
-            return -d.uncert
-        }
-    )
-    .attr("y2", function(d)
-        {
-//        return +d.uncert*magXFactor
-            return +d.uncert
-        }
-    )
-
-
-    //---show only symbols with error bar---
-    for(var k = 0; k<ErrorBarData.length; k++)
-    {
-        var bar = document.getElementById("errorBar"+k)
-
-        var symbolId = "point"+ErrorBarData[k].index
-        var symbol = document.getElementById(symbolId)
-        var uncert = parseFloat(symbol.getAttribute("uncert"))
-        if(uncert>UncertGT)
-        {
-            if(!symbol.style.display||symbol.style.display=="block")
-                bar.style.display = "block"
-                else
-                    bar.style.display = "none"
-        }
-        else
-        {
-            bar.style.display = "none"
-        }
-
-    }
-//    ErrorBars.attr("transform", function(d)
-//        {
-//            return "translate("+XscaleJulian(d.JD)+" "+YL(d.mag)+")"
-//        }
-//    )
-    var scaleY = YL.domain()[0] - YL.domain()[1]
-    ErrorBars.attr("transform", function(d)
-        {
-            return "scale(1, "+scaleY+")"+"translate("+XscaleJulian(d.JD)+" "+YL(d.mag)/scaleY+")"
-        }
-    )
-
-    ErrorBarInit = true
-
-    ErrorBarActive = true
-    ErrorBarG.style("display", "block")
-   
+    ErrorBarInit = true 
 }
 
-function resetErrorBar()
-{
 
-    errorBarCheck.checked = false
-    ErrorBarG.style("display", "none")
-    ErrorBarG.selectAll(".errorBar").remove()
-    ErrorBarInit = false
-    ErrorBarActive = false
-    for(var k = errorBarG.childNodes.length-1; k>=0; k--)
-        errorBarG.removeChild(errorBarG.childNodes.item(k))
 
-}

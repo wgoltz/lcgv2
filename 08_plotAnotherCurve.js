@@ -505,6 +505,7 @@ function sendAnotherPlot()
     var now = new Date()
     var inputError=false
     var errorMsg=""
+
     anotherFromDateValue.style.background=""
     anotherToDateValue.style.background=""
   if(!plotAllDaysCheck.checked)

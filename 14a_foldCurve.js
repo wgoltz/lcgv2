@@ -1,15 +1,15 @@
 //---each new star---
-var MeanColorArray =[]
-function buildMeanSelect()
+var FoldArray =[]
+function buildFoldSelect()
 {
-    /*---Create drop-down menu for mean bands---
+    /*---Create drop-down menu for fold bands---
         Called from:
            buildJsonObj @ 02_buildData.js
     */
-    MeanColorArray =[]
+    FoldArray =[]
     //---clear previous---
-    for(var k = meanBandSelect.options.length-1; k>=0; k--)
-        meanBandSelect.removeChild(meanBandSelect.options[k])
+    for(var k = foldSelect.options.length-1; k>=0; k--)
+        foldSelect.removeChild(foldSelect.options[k])
 
     for(var k = 0; k<SymbolClones.length; k++)
     {
@@ -41,207 +41,194 @@ function buildMeanSelect()
                     option.style.color = "black"
                 option.value = jsonBand
                 option.text = bandName+" ("+jsonCnt+")"
-                meanBandSelect.appendChild(option)
+                foldSelect.appendChild(option)
 
                 break
             }
         }
     }
+
+//    if (FoldActive)
+//        setFoldPeriod()
 }
 
+var FoldSlider
 
-//---reset on new star---
-function resetMean()
+function keyUpFoldPeriod()
 {
-    /*---Remove previous mean, init bin slider---
+    /*---onkeyup over bin value---
         Called from:
-           boxButtonClicked @ 05_boxPlot.js
-           sendAnotherPlotLoading @ 08_plotAnotherCurve.js
+           binSizeValue @ index.htm
     */
-    if(MeanActive==true)
+    var keyUpPeriod = parseFloat(foldPeriodValue.value)
+    if(keyUpPeriod>0)
     {
-        MeanActive = false
-
-        if(MeanOpen==true)
-            closeDiv("meanCurveDiv")
-
-        MeanCurve.attr("d", null)
-        MeanPointG.selectAll(".meanPoint").remove()
-        for(var k = meanErrorBarG.childNodes.length-1; k>=0; k--)
-            meanErrorBarG.removeChild(meanErrorBarG.childNodes.item(k))
-
-        meanBinSliderDiv.innerHTML = ""
-
-        initMeanBinSlider()
-
-        MeanBand = null
+        FoldPeriodValue = keyUpPeriod
+        FoldSlider.value(foldPeriodValue)
+        setFoldPeriod()
     }
 }
 
-var MeanBand
-
-function meanBandSelected()
-{
-    /*---Mean drop-down menu selection---
-        Called from on change:
-            meanBandSelect @ lcgBETA.js
-    */
-//    if(!MeanActive)
-//    if(BinValue!=1) //---initial start value
-//        setMeanBin()
-    displayPoints()
-}
-
-var MeanG
-var MeanCurveG
-var MeanCurve
-var D3line
-var MeanPointG
-var MeanErrorBarG
-var MeanActive = false
-var MeanOpen = false
-
-var MeanBinSlider
-
-
-function initMeanBinSlider()
+function initFoldSlider()
 {
     /*---Create the Mean Bin slider---
         Called from:
            initPlot @ 03_initPlot.js
     */
 
-    binSizeValue.value = BinValue
+    foldPeriodValue.value = FoldPeriodValue
 
-    MeanBinSlider = d3.slider().value(BinValue).axis(true).min(.1).max(20).step(.1)
+    FoldSlider = d3.slider().value(FoldPeriodValue).axis(true).min(.1).max(20).step(.1)
     .on("slide", function(evt, value)
     {
-        BinValue = value
-        if(BinValue<3)
-            binSizeValue.value = BinValue.toFixed(1)
+        FoldPeriodValue = value
+        if(FoldPeriodValue<3)
+            foldPeriodValue.value = FoldPeriodValue.toFixed(1)
         else
-            binSizeValue.value = BinValue.toFixed(0)
+            foldPeriodValue.value = FoldPeriodValue.toFixed(0)
     })
-    d3.select('#meanBinSliderDiv').call(MeanBinSlider)
+    d3.select('#foldSliderDiv').call(foldPeriodSlider)
 }
 
-var MeanCurveType = 'linear'
-function meanCurveTypeSelected()
+//---reset on new star---
+function resetFoldPeriod()
+{
+    /*---Remove previous mean, init bin slider---
+        Called from:
+           boxButtonClicked @ 05_boxPlot.js
+           sendAnotherPlotLoading @ 08_plotAnotherCurve.js
+    */
+    if(FoldActive==true)
+    {
+        FoldActive = false
+
+        if(FoldOpen==true)
+            closeDiv("foldPeriodDiv")
+
+        FoldPeriod.attr("d", null)
+        FoldPointG.selectAll(".foldPoint").remove()
+//        for(var k = meanErrorBarG.childNodes.length-1; k>=0; k--)
+//            meanErrorBarG.removeChild(meanErrorBarG.childNodes.item(k))
+
+        foldPeriodSliderDiv.innerHTML = ""
+
+        FoldValue = 1
+        initFoldSlider()
+
+        FoldBand = null
+    }
+//    setFoldPeriod()
+
+}
+
+var FoldBand
+
+function foldBandSelected()
+{
+    /*---Mean drop-down menu selection---
+        Called from on change:
+            foldBandSelect @ lcgBETA.js
+    */
+//    if(!FoldActive)
+//    if(FoldValue!=1) //---initial start value
+        setFoldPeriod()
+}
+
+var FoldG
+var FoldPeriodG
+var FoldPeriod
+var D3line
+var FoldPointG
+var MeanErrorBarG
+var FoldActive = false
+var FoldOpen = false
+
+var FoldPeriodType = 'linear'
+function foldPeriodTypeSelected()
 {
     /*---on change drop-down menu ---
         Called from:
-           meanCurveTypeSelect @ index.htm
+           foldPeriodTypeSelect @ index.htm
     */
-    MeanCurveType = meanCurveTypeSelect.options[meanCurveTypeSelect.selectedIndex].value
-    if(MeanCurveType=="none")
-        MeanCurveG.style("display", "none")
-    else if(MeanActive==true)
+    FoldPeriodType = foldPeriodTypeSelect.options[foldPeriodTypeSelect.selectedIndex].value
+    if(FoldPeriodType=="none")
+        FoldPeriodG.style("display", "none")
+    else if(FoldActive==true)
     {
-        if(MeanCurveType!="linear")
-            MeanCurve.transition().duration(800).attr('d', D3line.interpolate(MeanCurveType).tension(0.65))
+        if(FoldPeriodType!="linear")
+            FoldPeriod.transition().duration(800).attr('d', D3line.interpolate(FoldPeriodType).tension(0.65))
         else
-            MeanCurve.transition().duration(800).attr('d', D3line.interpolate(MeanCurveType))
+            FoldPeriod.transition().duration(800).attr('d', D3line.interpolate(FoldPeriodType))
 
-        MeanCurveG.style("display", "block")
-    }
-}
-function meanErrorBarCheckClicked()
-{
-    /*---User request mean error bars display ---
-        Called from:
-           meanErrorBarCheck @ index.htm
-    */
-    if(meanErrorBarCheck.checked)
-    {
-        if(MeanActive==true)
-        {
-            MeanErrorBarG.style("display", "block")
-            addMeanErrorBars()
-        }
-    }
-    else
-    {
-        MeanErrorBarG.style("display", "none")
+        FoldPeriodG.style("display", "block")
     }
 }
 
-var BinValue = 1
+
+var FoldValue = 1
 var AvgSDArray =[]
 var MedianCurvePoints =[]
 
-function keyUpMeanBin()
-{
-    /*---onkeyup over bin value---
-        Called from:
-           binSizeValue @ index.htm
-    */
-    var keyUpBin = parseFloat(binSizeValue.value)
-    if(keyUpBin>0)
-    {
-        BinValue = keyUpBin
-        MeanBinSlider.value(BinValue)
-//        setMeanBin()
-        displayPoints()
-    }
-}
-
-
-function setMeanBin()
+function setFoldPeriod()
 {
     /*---create mean points and curve---
         Called from:
             openDiv @ 00_util.js
             keyUpMeanBin @ 14_meanCurve.js
-            meanBandSelected @ 14_meanCurve.js
-            meanBinSliderDiv @ index.htm
+            foldBandSelected @ 14_meanCurve.js
+            foldPeriodSliderDiv @ index.htm
     */
-    MeanG.attr("display", "block")
-    var band = meanBandSelect.options[meanBandSelect.selectedIndex].value
+    FoldG.attr("display", "block")
+    var foldBand = foldBandSelect.options[foldBandSelect.selectedIndex].value
 
-    if(MeanBand && (MeanBand !== band))
-        SymbolG.selectAll("."+MeanBand+".trimmed.selected")
-        .style("opacity", 1)
+    FoldBand = foldBand
+    var foldObs = SymbolG.selectAll("."+foldBand)[0]
+     var points = PlotSVG.selectAll(".Points")[0]
 
-    SymbolG.selectAll("."+band+".trimmed.selected")
-    .style("opacity", 0.1)
+    var foldObsJDMagArray =[]
 
-    MeanBand = band
-
-    var points = SymbolG.selectAll(".Points."+band+".trimmed.selected")[0]
-
-    var meanObsJDMagArray =[]
-
-    for(var k = 0; k<points.length; k++)
+    // select points with contrib selected and band selected
+    for(var k = 0; k<foldObs.length; k++)
     {
-        var point = points[k]
-        if(point.getAttribute("faint") == 0) // no faint
+        var foldOb = foldObs[k]
+        var faint = foldOb.getAttribute("faint")
+        var pnt = points[k]
+        if(pnt.style.display=="block" && faint=="0")
         {
-            var JD = parseFloat(point.getAttribute("xValTop"))
-            var mag = parseFloat(point.getAttribute("yVal"))
-            var tf = d3.transform(point.getAttribute("transform"))
+            var JD = parseFloat(foldOb.getAttribute("xValTop"))
+            var mag = parseFloat(foldOb.getAttribute("yVal"))
+            var tf = d3.transform(foldOb.getAttribute("transform"))
             var transX = tf.translate[0]
             var transY = tf.translate[1]
-            meanObsJDMagArray.push([JD, mag, transX, transY])
+            foldObsJDMagArray.push([JD, mag, transX, transY])
         }
     }
+
+//    if(document.getElementById("bandFaintCheck"))
+//    if(bandFaintCheck.checked==false)
+//    {
+//        for(var k = 0; k<points.length; k++)
+//        {
+//            var pnt = points[k]
+//            var faint = pnt.getAttribute("faint")
+//            if(faint!="0")
+//                pnt.style.display = "none"
+//        }
+//    }
 
     // get band display color
     for(var k = 0; k<MeanColorArray.length; k++)
     {
-        var meanColor = MeanColorArray[k]
-        if(meanColor[0]==band)
+        var bnd = MeanColorArray[k][0]
+        if(bnd==foldBand)
         {
-            var color = meanColor[1]
+            var meanColor = MeanColorArray[k][1]
             break
         }
     }
 
-    if(BoxAreaSet)
-        var jdSpan = (SlideJD1-SlideJD0)
-    else
-        var jdSpan = (PlotJDEnd-PlotJDStart)
-
-    var binJD = jdSpan/BinValue
+    var jdSpan = (PlotJDEnd-PlotJDStart)
+    var binJD = jdSpan/FoldValue
 
     var bins = Math.ceil(binJD)
 
@@ -255,9 +242,9 @@ function setMeanBin()
         var x0 = k*binOffsetX
         var x1 = x0+binOffsetX
 
-        for (; m<meanObsJDMagArray.length; m++)
+        for (; m<foldObsJDMagArray.length; m++)
         {
-            var ob = meanObsJDMagArray[m]
+            var ob = foldObsJDMagArray[m]
             var myX = ob[2]
 
             if(myX<x0)
@@ -303,8 +290,7 @@ function setMeanBin()
 
     }
 
-    // fix this
-    if(color=="black") //---Vis---
+    if(meanColor=="black") //---Vis---
     {
         var fillColor = "white"
         var strokeColor = "black"
@@ -314,16 +300,16 @@ function setMeanBin()
     {
         var strokeColor = "none"
         var strokeWidth = "0"
-        var fillColor = color
+        var fillColor = meanColor
     }
 
-    MeanPointG.attr("fill", fillColor)
-    MeanPointG.selectAll(".meanPoint").remove()
+    FoldPointG.attr("fill", fillColor)
+    FoldPointG.selectAll(".foldPoint").remove()
 
-    MeanPointG.selectAll(".meanPoint")
+    FoldPointG.selectAll(".foldPoint")
     .data(AvgSDArray)
     .enter().append("circle")
-    .attr("class", "meanPoint")
+    .attr("class", "foldPoint")
     .attr("avg", function(d)
     {
         return d[0][0]
@@ -367,39 +353,62 @@ function setMeanBin()
     }
 
     //--- fill d curveS----
-    if(MeanCurveType!="none")
+    if(FoldPeriodType!="none")
     {
         D3line = d3.svg.line()
-        if(MeanCurveType=="linear")
-            MeanCurve.datum(MedianCurvePoints)
-            .transition().duration(800).attr('d', D3line.interpolate(MeanCurveType))
+        if(FoldPeriodType=="linear")
+            FoldPeriod.datum(MedianCurvePoints)
+            .transition().duration(800).attr('d', D3line.interpolate(FoldPeriodType))
             .attr("id", "meanCurve")
-            .attr("stroke", color)
+            .attr("stroke", meanColor)
             .attr("fill", "none")
             .attr("vector-effect", "non-scaling-stroke")
             .attr("stroke-width", "1")
         else
-            MeanCurve.datum(MedianCurvePoints)
-            .transition().duration(800).attr('d', D3line.interpolate(MeanCurveType).tension(0.65))
+            FoldPeriod.datum(MedianCurvePoints)
+            .transition().duration(800).attr('d', D3line.interpolate(FoldPeriodType).tension(0.65))
             .attr("id", "meanCurve")
-            .attr("stroke", color)
+            .attr("stroke", meanColor)
             .attr("fill", "none")
             .attr("vector-effect", "non-scaling-stroke")
             .attr("stroke-width", "1")
     }
 
+    var points = PlotSVG.selectAll(".Points")[0]
+    for(var k = 0; k<points.length; k++)
+    {
+        var pnt = points[k]
+        var band = pnt.getAttribute("band")
+        if(band==FoldBand)
+            if (pnt.style.display=="block")
+                pnt.setAttribute("opacity", '.1')
+            else
+                pnt.removeAttribute("opacity")
+    }
+//    if(document.getElementById("bandFaintCheck"))
+//        if(bandFaintCheck.checked==false)
+//    {
+//        for(var k = 0; k<points.length; k++)
+//        {
+//            var pnt = points[k]
+//            var faint = pnt.getAttribute("faint")
+//            if(faint!="0")
+//                pnt.style.display = "none"
+//        }
+//    }
+
     if(meanErrorBarCheck.checked)
         addMeanErrorBars()
 
-//    MeanActive = true
+    FoldActive = true
 }
 
 function addMeanErrorBars()
 {
     /*---Create mean error bars---
         Called from:
-           meanErrorBarCheckClicked @ 14_meanCurve.js
-           setMeanBin @ 14_meanCurve.js
+           foldPeriodBarCheckClicked @ 14_meanCurve.js
+           setFoldPeriod @ 14_meanCurve.js
     */
     //---compute line values:length----
     var meanBarData =[]
@@ -415,36 +424,39 @@ function addMeanErrorBars()
     for(var k = meanErrorBarG.childNodes.length-1; k>=0; k--)
         meanErrorBarG.removeChild(meanErrorBarG.childNodes.item(k))
 
-    MeanErrorBarG.selectAll(".meanErrorBar")
-    .data(meanBarData)
-    .enter().append("line")
-    .attr("class", "meanErrorBar)")
-    .attr("pointer-events", "none)")
-    .attr("stroke-width", function(d)
-    {
-        if(d[3]>10) return .5; else return 1;
-    })
-    .attr("marker-start", "url(#startArrow)")
-    .attr("marker-end", "url(#endArrow)")
-    .attr("x1", function(d)
-    {
-        return d[0]
-    })
-    .attr("x2", function(d)
-    {
-        return d[0]
-    })
-    .attr("y1", function(d)
-    {
-        return d[1]-d[2]
-    })
+        MeanErrorBarG.selectAll(".meanErrorBar")
+        .data(meanBarData)
+        .enter().append("line")
+        .attr("class", "meanErrorBar)")
+        .attr("pointer-events", "none)")
+        .attr("stroke-width", function(d)
+        {
+// ?               if(d[2]<20) return .5; else return 1;
+            if(d[3]>10) return .5; else return 1;
 
-    .attr("y2", function(d)
-    {
-        return d[1]+d[2]
-    })
+        })
+        .attr("marker-start", "url(#startArrow)")
+        .attr("marker-end", "url(#endArrow)")
+        .attr("x1", function(d)
+        {
+                return d[0]
+        })
+        .attr("y1", function(d)
+        {
+//                return d[1]-.5*d[2]
+            return d[1]-d[2]
+        })
+        .attr("x2", function(d)
+        {
+                return d[0]
+        })
+        .attr("y2", function(d)
+        {
+//                return d[1]+.5*d[2]
+            return d[1]+d[2]
+        })
 
-    MeanErrorBarG.style("display", "block")
+        MeanErrorBarG.style("display", "block")
 }
 
 function meanCurveButtonClicked()
@@ -453,18 +465,17 @@ function meanCurveButtonClicked()
         Called from:
           meanCurveButton @ index.htm
     */
-    MeanG.style("display", "block")
-    openDiv("meanCurveDiv")
+    FoldG.style("display", "block")
+    openDiv("foldPeriodDiv")
 
-    MeanActive = true
-    displayPoints()
+    setFoldPeriod()
 }
 
 function standardDeviation(values)
 {
     /*---compute standard deviation---
         Called from:
-           setMeanBin @ 14_meanCurve.js
+           setFoldPeriod @ 14_meanCurve.js
     */
 //    var avg = median(values);
     var avg = average(values);

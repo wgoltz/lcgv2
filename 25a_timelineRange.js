@@ -57,22 +57,24 @@ function requestedDateChecked()
             meanCurveButton.disabled = false
         }
         else if(BoxAreaSet == true)
-        {
-            boxResetButtonClicked()
-        }
+            boxReset()
+
         boxButton.disabled = true
         calendarDateRadio.disabled = true
         RequestedDateSet = true
 
-        XscaleJulian.domain([RequestedFromJD, RequestedToJD])
+// replace this:
+//        XscaleJulian.domain([RequestedFromJD, RequestedToJD])
+//        XaxisJulian.scale(XscaleJulian)
+//        XscaleTop.domain([RequestedFromJD, RequestedToJD])
+// with this:
+        SlideJD0 = RequestedFromJD
+        SlideJD1 = RequestedToJD
+        updateDomain()
+// doesn't work yet
 
-        XaxisJulian.scale(XscaleJulian)
-        XscaleTop.domain([RequestedFromJD, RequestedToJD])
-
-        XaxisJulian.tickFormat(d3.format("f"))
-       transition_data();
-        setTimeout(resetRequest_axis, 800)
-
+//        transition_data();
+//        setTimeout(resetRequest_axis, 800)
     }
     else
     {
@@ -98,10 +100,7 @@ function requestedDateChecked()
         PlotSVG.select(".y.axis.right")
         .call(YaxisRight)
         //---change grid---
-        GridYG.call(make_y_axis()
-            .tickSize(-XaxisWidth, 0, 0)
-            .tickFormat("")
-        )
+        GridYG.call(make_y_axis().tickSize(-XaxisWidth, 0, 0).tickFormat(""))
         //---needed for APASS data---
         function getMaxJD(Data)
         {
@@ -132,20 +131,23 @@ function requestedDateChecked()
             return[minJD, index]
         }
 
-        XscaleJulian.domain(d3.extent
-            (Data, function(d)
-                {
-                    return d.JD;
-                }
-            )
-        )
+        XscaleJulian.domain(d3.extent(Data, function(d)
+        {
+            return d.JD;
+        }))
+
         XaxisJulian.scale(XscaleJulian)
 
-        XaxisJulian.tickFormat(d3.format("f"))
-       transition_data();
-        reset_axis()
+        SlideJD0 = PlotJDStart
+        SlideJD1 = PlotJDEnd
+        updateDomain()
+
+//        transition_data();
+        //        reset_axis()
 
     }
+//    if(ErrorBarActive)
+//        displayErrorBars()
 
 }
 
@@ -178,12 +180,11 @@ function resetRequest_axis()
 
 function transition_data()
 {
-
-      Points = SymbolG.selectAll(".Points")
-                        .data(Data).transition().duration(1000)
-                        .attr("transform", function (d){return "translate("+XscaleJulian(d.JD)+" "+YL(d.mag)+")scale("+SymbolScaleRatio+")"})
-
-
-
+    Points = SymbolG.selectAll(".trimmed")
+    .data(Data).transition().duration(1000)
+    .attr("transform", function (d)
+    {
+        return "translate("+XscaleJulian(d.JD)+" "+YL(d.mag)+")scale("+SymbolScaleRatio+")"
+    })
 
 }
